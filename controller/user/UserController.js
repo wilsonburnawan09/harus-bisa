@@ -3,7 +3,7 @@ var router = express.Router();
 var bodyParser = require('body-parser');
 router.use(bodyParser.urlencoded({ extended: true }));
 router.use(bodyParser.json());
-var User = require('../model/User');
+var User = require('../../model/User');
 
 // CREATES A NEW USER
 router.post('/', function (req, res) {
