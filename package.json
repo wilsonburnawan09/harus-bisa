@@ -1,0 +1,30 @@
+{
+  "name": "harus-bisa",
+  "version": "1.0.0",
+  "description": "\"# harus-bisa repo\"",
+  "main": "main.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wilsonburnawan09/harus-bisa.git"
+  },
+  "author": "wilson burnawan",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wilsonburnawan09/harus-bisa/issues"
+  },
+  "homepage": "https://github.com/wilsonburnawan09/harus-bisa#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
+    "jsonwebtoken": "^8.4.0",
+    "mongoose": "^5.4.3",
+    "nodemon": "^1.18.9"
+  }
+}
