@@ -1,6 +1,9 @@
 var express = require('express');
+var cors = require('cors');
 var app = express();
 var db = require('./db');
+
+app.use(cors());
 
 var UserController = require('./controller/user/UserController');
 app.use('/users', UserController);
