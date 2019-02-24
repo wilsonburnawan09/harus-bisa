@@ -98,6 +98,32 @@ router.put('/:id', verifyToken, function(req, res, next){
     });
 });
 
+// delete course by id
+router.delete('/:id', verifyToken, function(req, res, next){
+    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to delete course."})
+    Course.findByIdAndDelete(req.params.id, function(err, course){
+        if (err) return res.status(500).send({ message: "There was a problem deleting the course."});
+        if (!course) return res.status(404).send({ message: "Course not found."});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course."});
+        let users = [...course.course_gradebook.keys()]
+        Promise.all(users.map(async (user_id) => {
+            let user_promise = "";
+            await User.findByIdAndUpdate(user_id, {$pull: {courses: req.params.id}}, {new: true}, function(err, user){
+                if (err) { console.log("There was a problem deleting the course from the user " + user_id + "."); }
+                if (!user) { console.log("User " + user_id + " not found."); }
+                user_promise = user;
+            });
+            return user_promise;
+        }))
+        .then( (users) => {
+            res.status(200).send({ course, affected_user: users});
+        })
+        .catch( err => {
+            console.log(err);
+            res.status(500).send({ message: "There was a problem deleting the course from the users"});
+        })
+    });
+});
 
 
 module.exports = router;

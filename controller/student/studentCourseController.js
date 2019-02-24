@@ -76,7 +76,6 @@ router.get('/', verifyToken, function(req, res, next) {
   router.delete('/:id', verifyToken, function(req,res,next){
     if (req.role != "student") return res.status(401).send({ message: "You are not a student."});
     User.findByIdAndUpdate(req.userId, {$pull: {courses: req.params.id}}, {new: true}, function(err, user){
-        console.log(err);
         if (err) return res.status(500).send({ message: "There was a problem deleting the course from the user."});
         if (!user) return res.status(404).send({ messsage: "User " + req.userId + " not found."});
         var student_to_remove = "course_gradebook." + String(user._id);
