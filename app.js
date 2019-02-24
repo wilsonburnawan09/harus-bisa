@@ -11,13 +11,16 @@ app.all('/', function(req, res, next) {
     next();
 });
 
-var UserController = require('./controller/user/UserController');
-app.use('/users', UserController);
+var UserController = require('./controller/user/userController');
+app.use('/api/users', UserController);
 
 var authController = require('./controller/auth/authController');
 app.use('/api/', authController);
 
-// app.get('/', function (req, res) {
-//     res.send("Hello")
-// });
+var studentCourseController = require('./controller/student/studentCourseController');
+app.use('/api/student/courses', studentCourseController);
+
+var professorCourseController = require('./controller/professor/professorCourseController');
+app.use('/api/professor/courses', professorCourseController);
+
 module.exports = app;
