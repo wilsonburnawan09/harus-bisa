@@ -2,9 +2,11 @@ var mongoose = require('mongoose');
 var courseSchema = new mongoose.Schema({  
   course_code: String,
   course_name: String,
-  join_code: String,
+  term: String,
+  description: String,
+  join_code: Number,
   school: String,
-  instructors: String, // alphabetical order
+  instructor: String, // alphabetical order
   course_gradebook: Map,
     // userid : {
     //   overall: Number,
