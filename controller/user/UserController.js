@@ -78,23 +78,4 @@ router.put('/:id', verifyToken, function (req, res, next) {
     }
 });
 
-
-// GIVEN FROM INTERNET
-
-// RETURNS ALL THE USERS IN THE DATABASE
-router.get('/', function (req, res) {
-    User.find({}, function (err, users) {
-        if (err) return res.status(500).send("There was a problem finding the users.");
-        res.status(200).send(users);
-    });
-});
-
-// DELETES ALL USERS FROM THE DATABASE
-router.delete('/', function (req, res) {
-    User.deleteMany({}, function (err) {
-        if (err) return res.status(500).send("There was a problem deleting the users.");
-        res.status(200).send("Every user was deleted.");
-    });
-});
-
 module.exports = router;

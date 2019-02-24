@@ -9,28 +9,39 @@ var verifyToken = require('../auth/verifyTokenMiddleware');
 
 // add course
 router.post('/', verifyToken, function(req, res, next){
+    if (req.role != "student") return res.status(401).send({ message: "Only student allowed to add course."});
     Course.findOne({join_code: req.body.join_code}, function(err, course){
-        if(err) return res.status(500).send({ message: "There was a problem finding the course."});
-        if(!course) return res.status(404).send({ message: "Course not found."});
-
+        if (err) return res.status(500).send({ message: "There was a problem finding the course."});
+        if (!course) return res.status(404).send({ message: "Course not found."});
+        if (course.course_gradebook.has(String(req.userId))) return res.status(409).send({ message: "Student is already in the course gradebook."});
         User.findOne({_id: req.userId}, function(err, user){
-            if(err) return res.status(500).send({ message: "There was a problem finding the student."});
-            if(!user) return res.status(404).send({ message: "User not found."});
+            if (err) return res.status(500).send({ message: "There was a problem finding the student."});
+            if (!user) return res.status(404).send({ message: "User not found."});
             var course_added = false;
             for (var i = 0; i < user.courses.length; i++){
-                if(user.courses[i].join_code == course.join_code){
+                if(String(user.courses[i]) == String(course._id)) {
                     course_added = true;
                     break;
                 }
             }
             if (!course_added){
-                user.courses.push(course);
+                user.courses.push(course._id);
+
                 user.save(function(err){
                     if(err) return res.status(500).send({user: user, message: "There was a problem addding the course"});
-                    res.status(201).send({course: course, message: "Course added."});
+                    var student_gradebook = {
+                        role: "student",
+                        overall: "NA",
+                        lectures_grade: []
+                    }
+                    var new_student = "course_gradebook." + String(user._id);
+                    Course.findByIdAndUpdate(course._id, {$set : {[new_student]: student_gradebook}}, {new: true}, function(err, course){
+                        if (err) return res.status(500).send({ message: "There was a problem adding the user to the course."});
+                        res.status(201).send(course);
+                    });
                 });
-            }else{
-                res.status(409).send({message:"Student is already in the course."});
+            } else {
+                res.status(409).send({ message: "Course is already in the student course list."});
             }
         })
     });
@@ -38,48 +49,43 @@ router.post('/', verifyToken, function(req, res, next){
 
 // get courses
 router.get('/', verifyToken, function(req, res, next) {
-    User.findById(req.userId, function (err, user) {
-      if (err) return res.status(500).send({ message: "There was a problem finding the user."});
-      if (!user) return res.status(404).send({ message: "No user found."});
-      user = {
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        school: user.school,
-        role: user.role,
-        courses: user.courses
-      }
-      res.status(200).send(user);
+    if (req.role != "student") return res.status(401).send({ message: "You are not a student."});
+    User.findById(req.userId, async function(err, user){
+        if(err) return res.status(500).send({ message: "There was a problem getting the user information."});
+        if(!user) return res.status(404).send({ message: "User " + req.userId + " not found." });
+        Promise.all(user.courses.map(async (course_id) => {
+            var course_promise;
+            await Course.findById(course_id, function(err, course){
+                var course = course.toObject();
+                delete course.course_gradebook;
+                delete course.lectures;
+                course_promise = course;
+            })
+            return course_promise;
+        }))
+        .then(courses => {
+            res.status(200).send(courses);
+        })
+        .catch(err => {
+            res.status(500).send({ message: "There was a problem getting the courses."});
+        }) 
     });
   });
 
   // delete course
-  router.delete('/:join_code', verifyToken, function(req,res,next){
-    User.findOneAndUpdate({ email: req.email}, {$pull: {courses: {join_code: req.params.join_code}}}, {new: true}, function(err, course){
-        if(err) return res.status(500).send({message: "There was a problem deleting the course."});
-        res.status(200).send({ deleted_course: course});
-        // for(var i = 0; i < user.courses.length; i++){
-        //     if(user.courses[i].join_code == req.params.join_code){
-        //         removed_course = user.courses[i];
-        //         user.courses.pull({join_code: req.params.join_code});
-        //         User.update({ join_code: req.params.join_code}, { $pull: {followers: "foo_bar"
-        //             }
-        //         }).exec(function(err, user){
-        //             console.log("foo_bar is removed from the list of your followers");
-        //         })
-        //         user.save(function(err, saved){
-        //             if(err) return res.status(500).send({message: "There was a problem removing the course"});
-        //             res.status(200).send({removed_course: saved, message: "Course has been removed."});
-        //         });
-        //         course_deleted = true;
-        //         break;
-        //     }
-        // }
-        // if(!course_deleted){
-        //     res.status(404).send({not_found_course_join_code: req.params.join_code, message: "Course not found in the student's course list "});
-        // }
+  router.delete('/:id', verifyToken, function(req,res,next){
+    if (req.role != "student") return res.status(401).send({ message: "You are not a student."});
+    User.findByIdAndUpdate(req.userId, {$pull: {courses: req.params.id}}, {new: true}, function(err, user){
+        console.log(err);
+        if (err) return res.status(500).send({ message: "There was a problem deleting the course from the user."});
+        if (!user) return res.status(404).send({ messsage: "User " + req.userId + " not found."});
+        var student_to_remove = "course_gradebook." + String(user._id);
+        Course.findByIdAndUpdate(req.params.id, {$unset: {[student_to_remove]: "" }}, {new: true}, function(err, course){
+            if (err) return res.status(500).send({ message: "There was a problem deleting the user from the course."});
+            if (!course) return res.status(404).send({ message: "Course with join code " + req.params.join_code + " not found."});
+            res.status(200).send(course)
+        });
     });
   });
-
 
 module.exports = router;
