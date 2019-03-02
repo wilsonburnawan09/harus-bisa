@@ -4,8 +4,8 @@ var bodyParser = require('body-parser');
 router.use(bodyParser.urlencoded({ extended: true }));
 var bcrypt = require('bcryptjs');
 router.use(bodyParser.json());
-var User = require('../../model/User');
-var verifyToken = require('../auth/verifyTokenMiddleware');
+var User = require('../model/User');
+var verifyToken = require('./auth/verifyTokenMiddleware');
 
 // get a user by id
 router.get('/:id', verifyToken, function(req, res, next) {
