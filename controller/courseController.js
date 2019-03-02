@@ -29,7 +29,6 @@ router.post('/', verifyToken, function(req, res, next){
         if (req.body.description) { description = req.body.description.trim();}
         Counter.findByIdAndUpdate("join_code", {$inc: {value: 1}}, {new: true}).then(function(counter){
             Course.create({
-                course_code: course_code,
                 course_name: course_name,
                 join_code: counter.value,
                 term: term,
