@@ -130,7 +130,7 @@ router.put('/:id', verifyToken, function(req, res, next){
 
         if (req.body.course_code) { course.course_code = req.body.course_code.trim(); }
         if (req.body.course_name) { course.course_name = req.body.course_name.trim(); }
-        if (req.body.term) { course.term = req.body.term.trim(); }
+        if (req.body.start_term && req.body.end_term) { course.term = req.body.start_term.trim() + " - " + req.body.end_term.trim(); }
         if (req.body.description) { course.description = req.body.description.trim(); }
         if (req.body.school) { course.school = req.body.school.trim(); }
         if (req.body.instructor) { course.instructor = req.body.instructor.trim(); } 
