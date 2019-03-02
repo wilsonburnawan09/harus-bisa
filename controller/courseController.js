@@ -128,9 +128,15 @@ router.put('/:id', verifyToken, function(req, res, next){
         if (!course) return res.status(404).send({ message: "Course " + req.params.id + " not found."});
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "The ID provided does not match the instructor ID for the course."});
 
-        if (req.body.course_code) { course.course_code = req.body.course_code.trim(); }
         if (req.body.course_name) { course.course_name = req.body.course_name.trim(); }
-        if (req.body.start_term && req.body.end_term) { course.term = req.body.start_term.trim() + " - " + req.body.end_term.trim(); }
+        if (req.body.start_term) { 
+            splitted_term = course.term.split(" ");
+            course.term = req.body.start_term.trim() + " - " + splitted_term[2]; 
+        }
+        if (req.body.end_term) { 
+            splitted_term = course.term.split(" ");
+            course.term = splitted_term[0] + " - " + req.body.end_term.trim(); 
+        }
         if (req.body.description) { course.description = req.body.description.trim(); }
         if (req.body.school) { course.school = req.body.school.trim(); }
         if (req.body.instructor) { course.instructor = req.body.instructor.trim(); } 
