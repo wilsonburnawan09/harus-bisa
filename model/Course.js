@@ -4,7 +4,6 @@ var courseSchema = new mongoose.Schema({
     term: String,
     description: String,
     join_code: {type: Number, index: true},
-    school: String,
     instructor: String, // alphabetical order
     instructor_id: mongoose.Schema.Types.ObjectId,
     course_gradebook: Map,

@@ -109,7 +109,6 @@ router.get('/', verifyToken, function(req, res, next){
                 last_name: user.last_name,
                 email: user.email,
                 role: user.role,
-                school: user.school,
                 courses : courses
             }
             res.status(200).send(user_with_courses);
@@ -138,7 +137,6 @@ router.put('/:id', verifyToken, function(req, res, next){
             course.term = splitted_term[0] + " - " + req.body.end_term.trim(); 
         }
         if (req.body.description) { course.description = req.body.description.trim(); }
-        if (req.body.school) { course.school = req.body.school.trim(); }
         if (req.body.instructor) { course.instructor = req.body.instructor.trim(); } 
 
         course.save();
