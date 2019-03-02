@@ -1,6 +1,5 @@
 var mongoose = require('mongoose');  
 var courseSchema = new mongoose.Schema({  
-    course_code: String,
     course_name: String,
     term: String,
     description: String,

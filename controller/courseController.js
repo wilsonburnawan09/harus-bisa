@@ -11,7 +11,6 @@ var verifyToken = require('./auth/verifyTokenMiddleware');
 // create course (professor) or add course (student)
 router.post('/', verifyToken, function(req, res, next){
     if (req.role == "professor") {
-        var course_code = "";
         var course_name = "";
         var term = "";
         var description = "";
@@ -21,13 +20,12 @@ router.post('/', verifyToken, function(req, res, next){
             overall: "N/A",
             lecture_grades: []
         }
-        if (req.body.course_code) { course_code = req.body.course_code.trim();}
         if (!req.body.course_name) {
             return res.status(500).send({ message: "Please provide course name."});
         } else { 
             course_name = req.body.course_name.trim();
         }
-        if (req.body.term) { term = req.body.term.trim();}
+        if (req.body.start_term && req.body.end_term) { term = req.body.start_term.trim() + " - " + req.body.end_term.trim();}
         if (req.body.description) { description = req.body.description.trim();}
         Counter.findByIdAndUpdate("join_code", {$inc: {value: 1}}, {new: true}).then(function(counter){
             Course.create({
@@ -101,6 +99,7 @@ router.get('/', verifyToken, function(req, res, next){
                 var course = course.toObject();
                 delete course.course_gradebook;
                 delete course.lectures;
+                delete course.instructor_id;
                 course_promise = course;
             })
             return course_promise;
