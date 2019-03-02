@@ -11,7 +11,7 @@ app.all('/', function(req, res, next) {
     next();
 });
 
-var UserController = require('./controlleruserController');
+var UserController = require('./controller/userController');
 app.use('/api/users', UserController);
 
 var authController = require('./controller/auth/authController');
