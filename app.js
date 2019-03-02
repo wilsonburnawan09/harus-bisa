@@ -21,6 +21,6 @@ var studentCourseController = require('./controller/student/studentCourseControl
 app.use('/api/student/courses', studentCourseController);
 
 var professorCourseController = require('./controller/professor/professorCourseController');
-app.use('/api/professor/courses', professorCourseController);
+app.use('/api/courses', professorCourseController);
 
 module.exports = app;
