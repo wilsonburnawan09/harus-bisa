@@ -70,7 +70,15 @@ router.get('/', verifyToken, function(req, res, next){
             return course_promise;
         }))
         .then(courses => {
-            res.status(200).send({ user: user, courses: courses });
+            user_with_courses = {
+                first_name: user.first_name,
+                last_name: user.last_name,
+                email: user.email,
+                role: user.role,
+                school: user.school,
+                courses : courses
+            }
+            res.status(200).send(user_with_course);s
         })
         .catch(err => {
             res.status(500).send({ message: "There was a problem getting the courses."});
