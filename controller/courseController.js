@@ -78,7 +78,7 @@ router.get('/', verifyToken, function(req, res, next){
                 school: user.school,
                 courses : courses
             }
-            res.status(200).send(user_with_course);s
+            res.status(200).send(user_with_courses);
         })
         .catch(err => {
             res.status(500).send({ message: "There was a problem getting the courses."});
