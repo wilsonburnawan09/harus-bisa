@@ -3,10 +3,10 @@ var router = express.Router();
 var bodyParser = require('body-parser');
 router.use(bodyParser.urlencoded({ extended: false }));
 router.use(bodyParser.json());
-var User = require('../../model/User');
-var Course = require('../../model/Course');
-var Counter = require('../../model/Counter');
-var verifyToken = require('../auth/verifyTokenMiddleware');
+var User = require('../model/User');
+var Course = require('../model/Course');
+var Counter = require('../model/Counter');
+var verifyToken = require('auth/verifyTokenMiddleware');
 
 // add course
 router.post('/', verifyToken, function(req, res, next){
