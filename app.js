@@ -11,17 +11,11 @@ app.all('/', function(req, res, next) {
     next();
 });
 
-var UserController = require('./controller/user/userController');
+var UserController = require('./controlleruserController');
 app.use('/api/users', UserController);
 
 var authController = require('./controller/auth/authController');
 app.use('/api/', authController);
-
-// var studentCourseController = require('./controller/student/studentCourseController');
-// app.use('/api/student/courses', studentCourseController);
-
-// var professorCourseController = require('./controller/professor/professorCourseController');
-// app.use('/api/professor/courses', professorCourseController);
 
 var courseController = require('./controller/courseController');
 app.use('/api/courses', courseController);
