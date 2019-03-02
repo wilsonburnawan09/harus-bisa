@@ -10,8 +10,8 @@ var verifyToken = require('../auth/verifyTokenMiddleware');
 
 // add course
 router.post('/', verifyToken, function(req, res, next){
-    if (req.role != "professor") return res.status(401).send({ message: "You are not a professor."});
-    var course_code = "";
+    if (req.role != "professor") {
+        var course_code = "";
     var course_name = "";
     var term = "";
     var description = "";
@@ -51,6 +51,8 @@ router.post('/', verifyToken, function(req, res, next){
     .catch(function (err){
         res.status(500).send({ message: "There was a problem generating the join code."});
     });
+    }
+    
 });
 
 // get courses
