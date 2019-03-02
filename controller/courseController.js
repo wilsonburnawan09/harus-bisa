@@ -41,7 +41,7 @@ router.post('/', verifyToken, function(req, res, next){
                 User.findByIdAndUpdate(req.userId, { $addToSet: { courses: course._id}}, {new: true}, function(err,user){
                     if (err) return res.status(500).send({ mesesage: "There was a problem adding the course to the user."});
                     if (!user) return res.status(500).send({ message: "There was a problem finding the user."});
-                    res.status(200).send(course);
+                    res.status(200).send({ message: "Course has been created."});
                 });
             });
         })
@@ -76,7 +76,7 @@ router.post('/', verifyToken, function(req, res, next){
                         var new_student = "course_gradebook." + String(user._id);
                         Course.findByIdAndUpdate(course._id, {$set : {[new_student]: student_gradebook}}, {new: true}, function(err, course){
                             if (err) return res.status(500).send({ message: "There was a problem adding the user to the course."});
-                            res.status(201).send(course);
+                            res.status(201).send({ message: "Course has been added."});
                         });
                     });
                 } else {
@@ -158,7 +158,7 @@ router.delete('/:id', verifyToken, function(req, res, next){
                 return user_promise;
             }))
             .then( (users) => {
-                res.status(200).send(course);
+                res.status(200).send({ message: "Course has been deleted."});
             })
             .catch( err => {
                 console.log(err);
@@ -173,7 +173,7 @@ router.delete('/:id', verifyToken, function(req, res, next){
             Course.findByIdAndUpdate(req.params.id, {$unset: {[student_to_remove]: "" }}, {new: true}, function(err, course){
                 if (err) return res.status(500).send({ message: "There was a problem deleting the user from the course."});
                 if (!course) return res.status(404).send({ message: "Course with join code " + req.params.join_code + " not found."});
-                res.status(200).send(course)
+                res.status(200).send({ message: "Course has been removed from student."});
             });
         });
     }
