@@ -13,8 +13,10 @@ router.post('/', verifyToken, function(req, res, next){
     if (req.role == "professor") {
         var course_name = "";
         var term = "";
+        var start_term = "";
+        var end_term = "";
         var description = "";
-        var user = {}
+        var user = {};
         user[req.userId] = {
             role: req.role,
             overall: "N/A",
@@ -25,7 +27,15 @@ router.post('/', verifyToken, function(req, res, next){
         } else { 
             course_name = req.body.course_name.trim();
         }
-        if (req.body.start_term && req.body.end_term) { term = req.body.start_term.trim() + " - " + req.body.end_term.trim();}
+
+        if (req.body.start_term) {
+            start_term = req.body.start_term.trim();
+        }
+        if (req.body.end_term) {
+            end_term = req.body.end_term.trim();
+        }
+        term = start_term + " - " + end_term;
+
         if (req.body.description) { description = req.body.description.trim();}
         Counter.findByIdAndUpdate("join_code", {$inc: {value: 1}}, {new: true}).then(function(counter){
             Course.create({
@@ -33,6 +43,8 @@ router.post('/', verifyToken, function(req, res, next){
                 join_code: counter.value,
                 term: term,
                 description: description,
+                number_of_students: 0,
+                number_of_lectures: 0,
                 instructor: req.first_name + ' ' + req.last_name,
                 instructor_id: req.userId,
                 course_gradebook: user
@@ -49,7 +61,9 @@ router.post('/', verifyToken, function(req, res, next){
             res.status(500).send({ message: "There was a problem generating the join code."});
         });
     } else if (req.role == "student") {
-        Course.findOne({join_code: req.body.join_code}, function(err, course){
+        var join_code;
+        if(req.body.join_code) {join_code = req.body.join_code.trim();}
+        Course.findOne({join_code: join_code}, function(err, course){
             if (err) return res.status(500).send({ message: "There was a problem finding the course."});
             if (!course) return res.status(404).send({ message: "Course not found."});
             if (course.course_gradebook.has(String(req.userId))) return res.status(409).send({ message: "Student is already in the course gradebook."});
@@ -74,7 +88,7 @@ router.post('/', verifyToken, function(req, res, next){
                             lectures_grade: []
                         }
                         var new_student = "course_gradebook." + String(user._id);
-                        Course.findByIdAndUpdate(course._id, {$set : {[new_student]: student_gradebook}}, {new: true}, function(err, course){
+                        Course.findByIdAndUpdate(course._id, {$set: {[new_student]: student_gradebook}, $inc: {number_of_students: 1}}, {new: true}, function(err, course){
                             if (err) return res.status(500).send({ message: "There was a problem adding the user to the course."});
                             res.status(201).send({ message: "Course has been added."});
                         });
@@ -89,19 +103,11 @@ router.post('/', verifyToken, function(req, res, next){
 
 // get courses
 router.get('/', verifyToken, function(req, res, next){ 
-    User.findById(req.userId, async function(err, user){
+    User.findById(req.userId, function(err, user){
         if(err) return res.status(500).send({ message: "There was a problem getting the user information."});
         if(!user) return res.status(404).send({ message: "User " + req.userId + " not found." });
         Promise.all(user.courses.map(async (course_id) => {
-            var course_promise;
-            await Course.findById(course_id, function(err, course){
-                var course = course.toObject();
-                delete course.course_gradebook;
-                delete course.lectures;
-                delete course.instructor_id;
-                course_promise = course;
-            })
-            return course_promise;
+            return await Course.findById(course_id, {course_gradebook: 0, lectures: 0});
         }))
         .then(courses => {
             user_with_courses = {
@@ -109,6 +115,7 @@ router.get('/', verifyToken, function(req, res, next){
                 last_name: user.last_name,
                 email: user.email,
                 role: user.role,
+                school: user.school,
                 courses : courses
             }
             res.status(200).send(user_with_courses);
@@ -128,14 +135,18 @@ router.put('/:id', verifyToken, function(req, res, next){
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "The ID provided does not match the instructor ID for the course."});
 
         if (req.body.course_name) { course.course_name = req.body.course_name.trim(); }
+
+        var splitted_term = course.term.split(" ");
+        var start_term = splitted_term[0];
+        var end_term = splitted_term[2];
         if (req.body.start_term) { 
-            splitted_term = course.term.split(" ");
-            course.term = req.body.start_term.trim() + " - " + splitted_term[2]; 
+            start_term = req.body.start_term.trim();
         }
         if (req.body.end_term) { 
-            splitted_term = course.term.split(" ");
-            course.term = splitted_term[0] + " - " + req.body.end_term.trim(); 
+            end_term = req.body.end_term.trim(); 
         }
+        course.term = start_term + " - " + end_term;
+
         if (req.body.description) { course.description = req.body.description.trim(); }
         if (req.body.instructor) { course.instructor = req.body.instructor.trim(); } 
 
@@ -147,42 +158,123 @@ router.put('/:id', verifyToken, function(req, res, next){
 // delete course by id
 router.delete('/:id', verifyToken, function(req, res, next){
     if (req.role == "professor") {
-        Course.findByIdAndDelete(req.params.id, function(err, course){
-            if (err) return res.status(500).send({ message: "There was a problem deleting the course."});
+        Course.findById(req.params.id, function(err, course){
+            if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
             if (!course) return res.status(404).send({ message: "Course not found."});
             if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course."});
-            let users = [...course.course_gradebook.keys()]
-            Promise.all(users.map(async (user_id) => {
-                let user_promise = "";
-                await User.findByIdAndUpdate(user_id, {$pull: {courses: req.params.id}}, {new: true}, function(err, user){
-                    if (err) { console.log("There was a problem deleting the course from the user " + user_id + "."); }
-                    if (!user) { console.log("User " + user_id + " not found."); }
-                    user_promise = user;
-                });
-                return user_promise;
-            }))
-            .then( (users) => {
-                res.status(200).send({ message: "Course has been deleted."});
-            })
-            .catch( err => {
-                console.log(err);
-                res.status(500).send({ message: "There was a problem deleting the course from the users"});
-            })
+            Course.findByIdAndDelete(req.params.id, function(err, course){
+                if (err) return res.status(500).send({ message: "There was a problem deleting the course."});
+                let users = [...course.course_gradebook.keys()]
+                Promise.all(users.map(async (user_id) => {
+                    let user_promise = "";
+                    return await User.findByIdAndUpdate(user_id, {$pull: {courses: req.params.id}}, {new: true}, function(err, user){
+                        if (err) { console.log("There was a problem deleting the course from the user " + user_id + "."); }
+                        if (!user) { console.log("User " + user_id + " not found."); }
+                        user_promise = user;
+                        return user;
+                    });
+                }))
+                .then( (users) => {
+                    res.status(200).send({ message: "Course has been deleted."});
+                })
+                .catch( err => {
+                    console.log(err);
+                    res.status(500).send({ message: "There was a problem deleting the course from the users"});
+                })
+            });
         });
     } else if (req.role == "student") {
         User.findByIdAndUpdate(req.userId, {$pull: {courses: req.params.id}}, {new: true}, function(err, user){
             if (err) return res.status(500).send({ message: "There was a problem deleting the course from the user."});
             if (!user) return res.status(404).send({ messsage: "User " + req.userId + " not found."});
             var student_to_remove = "course_gradebook." + String(user._id);
-            Course.findByIdAndUpdate(req.params.id, {$unset: {[student_to_remove]: "" }}, {new: true}, function(err, course){
+            Course.findByIdAndUpdate(req.params.id, {$unset: {[student_to_remove]: "" }, $inc: {number_of_students: -1}}, {new: true}, function(err, course){
                 if (err) return res.status(500).send({ message: "There was a problem deleting the user from the course."});
                 if (!course) return res.status(404).send({ message: "Course with join code " + req.params.join_code + " not found."});
                 res.status(200).send({ message: "Course has been removed from student."});
             });
         });
-    }
-    
+    } 
 });
 
+// create lecture
+router.post('/:course_id/lectures', verifyToken, function(req, res, next){
+    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course."});
+    if (!req.body.description) {
+        return res.status(500).send({ message: "Please provide description."});
+    } else { 
+        description = req.body.description.trim();
+    }
+
+    var class_date = "-";
+    if (req.body.date) { class_date = req.body.date.trim(); }
+
+    Counter.findByIdAndUpdate("lecture_id", {$inc: {value: 1}}, {new: true}).then(function(counter){
+        var lecture = {
+            id: counter.value,
+            class_date: class_date,
+            description: description,
+            in_progess: false,
+            quizzes: []
+        }
+    
+        Course.findById(req.params.course_id, function(err, course){
+            if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
+            if (!course) return res.status(404).send({ message: "Course not found."});
+            if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course."});
+
+            Course.findByIdAndUpdate(req.params.course_id, {$push: {lectures: lecture}, $inc: {number_of_lectures: 1}}, {new: true, projection: {course_gradebook: 0}}, function(err, course){
+                if (err) return res.status(500).send({ message: "There was a problem updating for the course."});
+                if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found."});
+                if (course.instructor_id != req.userId) return res.status(401).send({ message: "The ID provided does not match the instructor ID for the course."});
+                res.status(200).send(course);
+            });
+        });
+    })
+    .catch(function (err){
+        res.status(500).send({ message: "There was a problem generating the join code."});
+    });
+});
+
+// get lectures
+router.get('/:course_id/lectures/', verifyToken, function(req,res,next){
+    Course.findById(req.params.course_id, function(err, course){
+        if (err) {
+            return res.status(500).send({ message: "There was a problem looking for the course."});
+        }
+        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found."});
+        if (course.course_gradebook.has(req.userId)){
+            var projected_course = Object.assign({}, course)._doc;
+            delete projected_course.course_gradebook;
+            res.status(200).send(projected_course);
+        } else {
+            res.status(401).send({message: "User is not in this course."});
+        }
+    });
+});
+
+// delete lecture
+router.delete('/:course_id/lectures/:lecture_id', verifyToken, function(req,res,next){
+    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course."});
+    Course.findById(req.params.course_id, function(err, course){
+        if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
+        if (!course) return res.status(404).send({ message: "Course not found."});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course."});
+        Course.findByIdAndUpdate(req.params.course_id, {$pull: {lectures: {id: Number(req.params.lecture_id)}}, $inc: {number_of_lectures: -1}}, {new: true, projection: {course_gradebook: 0}}, function(err, course){
+            if (err) {
+                return res.status(500).send({ message: "There was a problem deleting for the course."});
+            }
+            res.status(200).send(course);
+        });
+    });
+});
+
+// update lecture
+
+// create quiz
+
+// delete quiz
+
+// update quiz
 
 module.exports = router;
