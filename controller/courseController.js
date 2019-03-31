@@ -151,6 +151,7 @@ router.get('/', verifyToken, function(req, res, next){
 
 // update course by id
 router.put('/:id', verifyToken, function(req, res, next){
+    console.log("BIsa kok")
     if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course."})
     Course.findById(req.params.id, function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
@@ -239,9 +240,27 @@ router.delete('/:id', verifyToken, function(req, res, next){
             Course.findByIdAndUpdate(req.params.id, {$unset: {[student_to_remove]: "" }, $inc: {number_of_students: -1}}, {new: true}, function(err, course){
                 if (err) return res.status(500).send({ message: "There was a problem deleting the user from the course.", data: null});
                 if (!course) return res.status(404).send({ message: "Course with join code " + req.params.join_code + " not found.", data: null});
-                res.status(200).send({  
-                    message: "Course has been removed from student.",
-                    data: user});
+                Promise.all(user.courses.map(async (course_id) => {
+                    return await Course.findById(course_id, {course_gradebook: 0, lectures: 0});
+                }))
+                .then(courses => {
+                    user_with_courses = {
+                        first_name: user.first_name,
+                        last_name: user.last_name,
+                        email: user.email,
+                        role: user.role,
+                        school: user.school,
+                        courses : courses
+                    }
+                    res.status(200).send({  message: "Course has been deleted.",
+                                            data: user_with_courses
+                                        });
+                })
+                .catch(err => {
+                    res.status(500).send({  message: "There was a problem getting the courses.",
+                                            data: null
+                                        });
+                }) 
             });
         });
     } 
