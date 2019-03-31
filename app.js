@@ -20,4 +20,7 @@ app.use('/api/', authController);
 var courseController = require('./controller/courseController');
 app.use('/api/courses', courseController);
 
+var lectureController = require('./controller/lectureController');
+app.use('/api/courses/:course_id/lectures', lectureController)
+
 module.exports = app;

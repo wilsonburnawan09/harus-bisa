@@ -7,18 +7,22 @@ router.use(bodyParser.json());
 var User = require('../model/User');
 var verifyToken = require('./auth/verifyTokenMiddleware');
 
-// get a user by id
-router.get('/:id', verifyToken, function(req, res, next) {
-    if (req.userId != req.params.id) {
-        res.status(401).send({ message: "ID does not match with ID in token."});
-    } else {
-        User.findById(req.params.id, function (err, user) {
-            if (err) return res.status(500).send({ message: "There was a problem finding the user."});
-            if (!user) return res.status(404).send({ message: "User " + req.params.id + " not found."});
-            res.status(200).send(user);
-        });
-    }
-});
+// // get a user by id
+// router.get('/:id', verifyToken, function(req, res, next) {
+//     if (req.userId != req.params.id) {
+//         res.status(401).send({ message: "ID does not match with ID in token."});
+//     } else {
+//         User.findById(req.params.id, function (err, user) {
+//             if (err) return res.status(500).send({ message: "There was a problem finding the user."});
+//             if (!user) return res.status(404).send({ message: "User " + req.params.id + " not found."});
+//             res.status(200).send(user);
+//         });
+//     }
+// });
+
+router.get('/', function(req,res){
+    res.status('Hello');
+})
 
 // delete a user by id
 router.delete('/:id', verifyToken, function (req, res, next) {

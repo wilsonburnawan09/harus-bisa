@@ -103,6 +103,7 @@ router.post('/', verifyToken, function(req, res, next){
 
 // get courses
 router.get('/', verifyToken, function(req, res, next){ 
+    console.log('here')
     User.findById(req.userId, function(err, user){
         if(err) return res.status(500).send({ message: "There was a problem getting the user information."});
         if(!user) return res.status(404).send({ message: "User " + req.userId + " not found." });
@@ -197,84 +198,7 @@ router.delete('/:id', verifyToken, function(req, res, next){
     } 
 });
 
-// create lecture
-router.post('/:course_id/lectures', verifyToken, function(req, res, next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course."});
-    if (!req.body.description) {
-        return res.status(500).send({ message: "Please provide description."});
-    } else { 
-        description = req.body.description.trim();
-    }
-
-    var class_date = "-";
-    if (req.body.date) { class_date = req.body.date.trim(); }
-
-    Counter.findByIdAndUpdate("lecture_id", {$inc: {value: 1}}, {new: true}).then(function(counter){
-        var lecture = {
-            id: counter.value,
-            class_date: class_date,
-            description: description,
-            in_progess: false,
-            quizzes: []
-        }
-    
-        Course.findById(req.params.course_id, function(err, course){
-            if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
-            if (!course) return res.status(404).send({ message: "Course not found."});
-            if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course."});
-
-            Course.findByIdAndUpdate(req.params.course_id, {$push: {lectures: lecture}, $inc: {number_of_lectures: 1}}, {new: true, projection: {course_gradebook: 0}}, function(err, course){
-                if (err) return res.status(500).send({ message: "There was a problem updating for the course."});
-                if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found."});
-                if (course.instructor_id != req.userId) return res.status(401).send({ message: "The ID provided does not match the instructor ID for the course."});
-                res.status(200).send(course);
-            });
-        });
-    })
-    .catch(function (err){
-        res.status(500).send({ message: "There was a problem generating the join code."});
-    });
-});
-
-// get lectures
-router.get('/:course_id/lectures/', verifyToken, function(req,res,next){
-    Course.findById(req.params.course_id, function(err, course){
-        if (err) {
-            return res.status(500).send({ message: "There was a problem looking for the course."});
-        }
-        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found."});
-        if (course.course_gradebook.has(req.userId)){
-            var projected_course = Object.assign({}, course)._doc;
-            delete projected_course.course_gradebook;
-            res.status(200).send(projected_course);
-        } else {
-            res.status(401).send({message: "User is not in this course."});
-        }
-    });
-});
-
-// delete lecture
-router.delete('/:course_id/lectures/:lecture_id', verifyToken, function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course."});
-    Course.findById(req.params.course_id, function(err, course){
-        if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
-        if (!course) return res.status(404).send({ message: "Course not found."});
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course."});
-        Course.findByIdAndUpdate(req.params.course_id, {$pull: {lectures: {id: Number(req.params.lecture_id)}}, $inc: {number_of_lectures: -1}}, {new: true, projection: {course_gradebook: 0}}, function(err, course){
-            if (err) {
-                return res.status(500).send({ message: "There was a problem deleting for the course."});
-            }
-            res.status(200).send(course);
-        });
-    });
-});
-
-// update lecture
-
-// create quiz
-
-// delete quiz
-
-// update quiz
 
 module.exports = router;
+
+// TODO always return message and data

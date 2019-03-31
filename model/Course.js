@@ -23,11 +23,10 @@ var courseSchema = new mongoose.Schema({
     //   description: String,
     //   quizzes: [{
     //      question: String,
-    //      possible_answers: [String],
-    //      correct_answer: Number,
-    //      question_number: Number,
+    //      answers: [{correct: Boolean, text: String}],
     //      time_duration: Number
-    //      participation_reward: Number
+    //      total_point: Number
+    //      participation_reward_percentage: Number
     //    }],
     // },
 });
