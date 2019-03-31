@@ -199,7 +199,8 @@ router.delete('/:id', verifyToken, function(req, res, next){
                         })
                         .catch(err => {
                             res.status(500).send({  message: "There was a problem getting the courses.",
-                                                    data: null});
+                                                    data: null
+                                                });
                         }) 
                     });
                 })
