@@ -103,7 +103,6 @@ router.post('/', verifyToken, function(req, res, next){
 
 // get courses
 router.get('/', verifyToken, function(req, res, next){ 
-    console.log('here')
     User.findById(req.userId, function(err, user){
         if(err) return res.status(500).send({ message: "There was a problem getting the user information."});
         if(!user) return res.status(404).send({ message: "User " + req.userId + " not found." });
@@ -179,11 +178,35 @@ router.delete('/:id', verifyToken, function(req, res, next){
                     });
                 }))
                 .then( (users) => {
-                    res.status(200).send({ message: "Course has been deleted."});
+                    User.findById(req.userId, function(err, user){
+                        if(err) return res.status(500).send({ message: "There was a problem getting the user information."});
+                        if(!user) return res.status(404).send({ message: "User " + req.userId + " not found." });
+                        Promise.all(user.courses.map(async (course_id) => {
+                            return await Course.findById(course_id, {course_gradebook: 0, lectures: 0});
+                        }))
+                        .then(courses => {
+                            user_with_courses = {
+                                first_name: user.first_name,
+                                last_name: user.last_name,
+                                email: user.email,
+                                role: user.role,
+                                school: user.school,
+                                courses : courses
+                            }
+                            res.status(200).send({  message: "Course has been deleted.",
+                                                    data: user_with_courses
+                                                });
+                        })
+                        .catch(err => {
+                            res.status(500).send({  message: "There was a problem getting the courses.",
+                                                    data: null});
+                        }) 
+                    });
                 })
                 .catch( err => {
-                    console.log(err);
-                    res.status(500).send({ message: "There was a problem deleting the course from the users"});
+                    res.status(500).send({  message: "There was a problem deleting the course from the users",
+                                            data: null
+                                        });
                 })
             });
         });
