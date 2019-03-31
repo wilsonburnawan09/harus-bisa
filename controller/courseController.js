@@ -122,7 +122,6 @@ router.post('/', verifyToken, function(req, res, next){
 
 // get courses
 router.get('/', verifyToken, function(req, res, next){ 
-    console.log('get route')
     User.findById(req.userId, function(err, user){
         if(err) return res.status(500).send({ message: "There was a problem getting the user information.", data: null});
         if(!user) return res.status(404).send({ message: "User " + req.userId + " not found.", data: null});
@@ -150,11 +149,9 @@ router.get('/', verifyToken, function(req, res, next){
 });
 
 // update course by id
-router.post('/:id/update', verifyToken, function(req, res, next){
-    console.log("BIsa kok")
+router.put('/:id', verifyToken, function(req, res, next){
     if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course."})
     Course.findById(req.params.id, function(err, course){
-        console.log(req.params.id)
         if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
         if (!course) return res.status(404).send({ message: "Course " + req.params.id + " not found."});
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "The ID provided does not match the instructor ID for the course."});
@@ -165,8 +162,37 @@ router.post('/:id/update', verifyToken, function(req, res, next){
         if (req.body.description) { course.description = req.body.description.trim(); }
         if (req.body.instructor) { course.instructor = req.body.instructor.trim(); } 
 
-        course.save();
-        res.status(200).send(course);
+        course.save().then(function(){
+            User.findById(req.userId, function(err, user){
+                if(err) return res.status(500).send({ message: "There was a problem getting the user information.", data: null});
+                if(!user) return res.status(404).send({ message: "User " + req.userId + " not found.", data: null});
+                Promise.all(user.courses.map(async (course_id) => {
+                    return await Course.findById(course_id, {course_gradebook: 0, lectures: 0});
+                }))
+                .then(courses => {
+                    user_with_courses = {
+                        first_name: user.first_name,
+                        last_name: user.last_name,
+                        email: user.email,
+                        role: user.role,
+                        school: user.school,
+                        courses : courses
+                    }
+                    res.status(200).send({  message: "Update course is a success.",
+                                            data: user_with_courses
+                                        });
+                })
+                .catch(err => {
+                    res.status(500).send({  message: "There was a problem getting the courses.",
+                                            data: null});
+                }) 
+            });
+        })
+        .catch(err => {
+            res.status(500).send({  message: "There was a problem getting the courses.",
+                                    data: null
+                                });
+        }); 
     });
 });
 
@@ -251,7 +277,7 @@ router.delete('/:id', verifyToken, function(req, res, next){
                     res.status(500).send({  message: "There was a problem getting the courses.",
                                             data: null
                                         });
-                }) 
+                }); 
             });
         });
     } 
