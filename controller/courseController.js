@@ -23,7 +23,7 @@ router.post('/', verifyToken, function(req, res, next){
             lecture_grades: []
         }
         if (!req.body.course_name) {
-            return res.status(500).send({ message: "Please provide course name."});
+            return res.status(500).send({ message: "Please provide course name.", data: null});
         } else { 
             course_name = req.body.course_name.trim();
         }
@@ -49,11 +49,11 @@ router.post('/', verifyToken, function(req, res, next){
                 instructor_id: req.userId,
                 course_gradebook: user
             }, function(err, course){
-                if (err) return res.status(500).send({ message: "There was a problem creating the course."});
-                User.findByIdAndUpdate(req.userId, { $addToSet: { courses: course._id}}, {new: true}, function(err,user){
-                    if (err) return res.status(500).send({ mesesage: "There was a problem adding the course to the user."});
-                    if (!user) return res.status(500).send({ message: "There was a problem finding the user."});
-                    res.status(200).send({ message: "Course has been created."});
+                if (err) return res.status(500).send({ message: "There was a problem creating the course.", data: null});
+                User.findByIdAndUpdate(req.userId, { $addToSet: { courses: course._id}}, {new: true, projection: {course_gradebook: 0, lectures: 0}}, function(err,user){
+                    if (err) return res.status(500).send({ mesesage: "There was a problem adding the course to the user.", data: null});
+                    if (!user) return res.status(500).send({ message: "There was a problem finding the user.", data: null});
+                    res.status(200).send({ message: "Course has been created.", data: user});
                 });
             });
         })
@@ -104,8 +104,8 @@ router.post('/', verifyToken, function(req, res, next){
 // get courses
 router.get('/', verifyToken, function(req, res, next){ 
     User.findById(req.userId, function(err, user){
-        if(err) return res.status(500).send({ message: "There was a problem getting the user information."});
-        if(!user) return res.status(404).send({ message: "User " + req.userId + " not found." });
+        if(err) return res.status(500).send({ message: "There was a problem getting the user information.", data: null});
+        if(!user) return res.status(404).send({ message: "User " + req.userId + " not found.", data: null});
         Promise.all(user.courses.map(async (course_id) => {
             return await Course.findById(course_id, {course_gradebook: 0, lectures: 0});
         }))
@@ -162,11 +162,11 @@ router.put('/:id', verifyToken, function(req, res, next){
 router.delete('/:id', verifyToken, function(req, res, next){
     if (req.role == "professor") {
         Course.findById(req.params.id, function(err, course){
-            if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
-            if (!course) return res.status(404).send({ message: "Course not found."});
-            if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course."});
+            if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
+            if (!course) return res.status(404).send({ message: "Course not found.", data: null});
+            if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
             Course.findByIdAndDelete(req.params.id, function(err, course){
-                if (err) return res.status(500).send({ message: "There was a problem deleting the course."});
+                if (err) return res.status(500).send({ message: "There was a problem deleting the course.", data: null});
                 let users = [...course.course_gradebook.keys()]
                 Promise.all(users.map(async (user_id) => {
                     let user_promise = "";
@@ -179,8 +179,8 @@ router.delete('/:id', verifyToken, function(req, res, next){
                 }))
                 .then( (users) => {
                     User.findById(req.userId, function(err, user){
-                        if(err) return res.status(500).send({ message: "There was a problem getting the user information."});
-                        if(!user) return res.status(404).send({ message: "User " + req.userId + " not found." });
+                        if(err) return res.status(500).send({ message: "There was a problem getting the user information.", data: null});
+                        if(!user) return res.status(404).send({ message: "User " + req.userId + " not found.", data: null });
                         Promise.all(user.courses.map(async (course_id) => {
                             return await Course.findById(course_id, {course_gradebook: 0, lectures: 0});
                         }))
@@ -212,14 +212,16 @@ router.delete('/:id', verifyToken, function(req, res, next){
             });
         });
     } else if (req.role == "student") {
-        User.findByIdAndUpdate(req.userId, {$pull: {courses: req.params.id}}, {new: true}, function(err, user){
-            if (err) return res.status(500).send({ message: "There was a problem deleting the course from the user."});
-            if (!user) return res.status(404).send({ messsage: "User " + req.userId + " not found."});
+        User.findByIdAndUpdate(req.userId, {$pull: {courses: req.params.id}}, {new: true, projection: {course_gradebook: 0, lectures: 0}}, function(err, user){
+            if (err) return res.status(500).send({ message: "There was a problem deleting the course from the user.", data: null});
+            if (!user) return res.status(404).send({ messsage: "User " + req.userId + " not found.", data: null});
             var student_to_remove = "course_gradebook." + String(user._id);
             Course.findByIdAndUpdate(req.params.id, {$unset: {[student_to_remove]: "" }, $inc: {number_of_students: -1}}, {new: true}, function(err, course){
-                if (err) return res.status(500).send({ message: "There was a problem deleting the user from the course."});
-                if (!course) return res.status(404).send({ message: "Course with join code " + req.params.join_code + " not found."});
-                res.status(200).send({ message: "Course has been removed from student."});
+                if (err) return res.status(500).send({ message: "There was a problem deleting the user from the course.", data: null});
+                if (!course) return res.status(404).send({ message: "Course with join code " + req.params.join_code + " not found.", data: null});
+                res.status(200).send({  
+                    message: "Course has been removed from student.",
+                    data: user});
             });
         });
     } 
