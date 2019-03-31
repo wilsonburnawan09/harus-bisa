@@ -119,10 +119,13 @@ router.get('/', verifyToken, function(req, res, next){
                 school: user.school,
                 courses : courses
             }
-            res.status(200).send(user_with_courses);
+            res.status(200).send({  message: "Get course is a success.",
+                                    data: user_with_courses
+                                });
         })
         .catch(err => {
-            res.status(500).send({ message: "There was a problem getting the courses."});
+            res.status(500).send({  message: "There was a problem getting the courses.",
+                                    data: null});
         }) 
     });
 });
