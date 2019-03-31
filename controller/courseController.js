@@ -150,10 +150,11 @@ router.get('/', verifyToken, function(req, res, next){
 });
 
 // update course by id
-router.put('/:id', verifyToken, function(req, res, next){
+router.post('/:id/update', verifyToken, function(req, res, next){
     console.log("BIsa kok")
     if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course."})
     Course.findById(req.params.id, function(err, course){
+        console.log(req.params.id)
         if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
         if (!course) return res.status(404).send({ message: "Course " + req.params.id + " not found."});
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "The ID provided does not match the instructor ID for the course."});
