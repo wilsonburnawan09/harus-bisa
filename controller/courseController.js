@@ -53,7 +53,27 @@ router.post('/', verifyToken, function(req, res, next){
                 User.findByIdAndUpdate(req.userId, { $addToSet: { courses: course._id}}, {new: true, projection: {course_gradebook: 0, lectures: 0}}, function(err,user){
                     if (err) return res.status(500).send({ mesesage: "There was a problem adding the course to the user.", data: null});
                     if (!user) return res.status(500).send({ message: "There was a problem finding the user.", data: null});
-                    res.status(200).send({ message: "Course has been created.", data: user});
+                    Promise.all(user.courses.map(async (course_id) => {
+                        return await Course.findById(course_id, {course_gradebook: 0, lectures: 0});
+                    }))
+                    .then(courses => {
+                        user_with_courses = {
+                            first_name: user.first_name,
+                            last_name: user.last_name,
+                            email: user.email,
+                            role: user.role,
+                            school: user.school,
+                            courses : courses
+                        }
+                        res.status(200).send({  message: "Course has been added.",
+                                                data: user_with_courses
+                                            });
+                    })
+                    .catch(err => {
+                        res.status(500).send({  message: "There was a problem getting the courses.",
+                                                data: null
+                                            });
+                    }) 
                 });
             });
         })
