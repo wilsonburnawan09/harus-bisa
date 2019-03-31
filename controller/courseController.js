@@ -12,7 +12,6 @@ var verifyToken = require('./auth/verifyTokenMiddleware');
 router.post('/', verifyToken, function(req, res, next){
     if (req.role == "professor") {
         var course_name = "";
-        var term = "";
         var start_term = "";
         var end_term = "";
         var description = "";
@@ -34,14 +33,14 @@ router.post('/', verifyToken, function(req, res, next){
         if (req.body.end_term) {
             end_term = req.body.end_term.trim();
         }
-        term = start_term + " - " + end_term;
 
         if (req.body.description) { description = req.body.description.trim();}
         Counter.findByIdAndUpdate("join_code", {$inc: {value: 1}}, {new: true}).then(function(counter){
             Course.create({
                 course_name: course_name,
                 join_code: counter.value,
-                term: term,
+                start_term: start_term,
+                end_term: end_term,
                 description: description,
                 number_of_students: 0,
                 number_of_lectures: 0,
@@ -78,18 +77,18 @@ router.post('/', verifyToken, function(req, res, next){
             });
         })
         .catch(function (err){
-            res.status(500).send({ message: "There was a problem generating the join code."});
+            res.status(500).send({ message: "There was a problem generating the join code.", data: null});
         });
     } else if (req.role == "student") {
         var join_code;
         if(req.body.join_code) {join_code = req.body.join_code.trim();}
         Course.findOne({join_code: join_code}, function(err, course){
-            if (err) return res.status(500).send({ message: "There was a problem finding the course."});
-            if (!course) return res.status(404).send({ message: "Course not found."});
-            if (course.course_gradebook.has(String(req.userId))) return res.status(409).send({ message: "Student is already in the course gradebook."});
+            if (err) return res.status(500).send({ message: "There was a problem finding the course.", data: null});
+            if (!course) return res.status(404).send({ message: "Course not found.", data: null});
+            if (course.course_gradebook.has(String(req.userId))) return res.status(409).send({ message: "Student is already in the course gradebook.", data: null});
             User.findOne({_id: req.userId}, function(err, user){
-                if (err) return res.status(500).send({ message: "There was a problem finding the student."});
-                if (!user) return res.status(404).send({ message: "User not found."});
+                if (err) return res.status(500).send({ message: "There was a problem finding the student.", data: null});
+                if (!user) return res.status(404).send({ message: "User not found.", data: null});
                 var course_added = false;
                 for (var i = 0; i < user.courses.length; i++){
                     if(String(user.courses[i]) == String(course._id)) {
@@ -101,7 +100,7 @@ router.post('/', verifyToken, function(req, res, next){
                     user.courses.push(course._id);
     
                     user.save(function(err){
-                        if(err) return res.status(500).send({user: user, message: "There was a problem addding the course"});
+                        if(err) return res.status(500).send({message: "There was a problem addding the course", data: null});
                         var student_gradebook = {
                             role: "student",
                             overall: "NA",
@@ -114,7 +113,7 @@ router.post('/', verifyToken, function(req, res, next){
                         });
                     });
                 } else {
-                    res.status(409).send({ message: "Course is already in the student course list."});
+                    res.status(409).send({ message: "Course is already in the student course list.", data: null});
                 }
             })
         });
@@ -160,18 +159,8 @@ router.post('/:id/update', verifyToken, function(req, res, next){
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "The ID provided does not match the instructor ID for the course."});
 
         if (req.body.course_name) { course.course_name = req.body.course_name.trim(); }
-
-        var splitted_term = course.term.split(" ");
-        var start_term = splitted_term[0];
-        var end_term = splitted_term[2];
-        if (req.body.start_term) { 
-            start_term = req.body.start_term.trim();
-        }
-        if (req.body.end_term) { 
-            end_term = req.body.end_term.trim(); 
-        }
-        course.term = start_term + " - " + end_term;
-
+        if (req.body.start_term) { course.start_term = req.body.start_term.trim(); }
+        if (req.body.end_term) { course.end_term = req.body.end_term.trim(); }
         if (req.body.description) { course.description = req.body.description.trim(); }
         if (req.body.instructor) { course.instructor = req.body.instructor.trim(); } 
 
