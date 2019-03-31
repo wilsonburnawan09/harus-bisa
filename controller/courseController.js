@@ -122,6 +122,7 @@ router.post('/', verifyToken, function(req, res, next){
 
 // get courses
 router.get('/', verifyToken, function(req, res, next){ 
+    console.log('get route')
     User.findById(req.userId, function(err, user){
         if(err) return res.status(500).send({ message: "There was a problem getting the user information.", data: null});
         if(!user) return res.status(404).send({ message: "User " + req.userId + " not found.", data: null});
