@@ -25,6 +25,7 @@ router.post('/', verifyToken, function(req, res, next){
         var year = toString(req.body.date.getFullYear);
         class_date = month + '/' + date + '/' + year;
     }
+    console.log('sini')
 
     Counter.findByIdAndUpdate("lecture_id", {$inc: {value: 1}}, {new: true}).then(function(counter){
         var lecture = {
