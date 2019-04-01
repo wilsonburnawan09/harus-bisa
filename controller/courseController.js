@@ -308,7 +308,4 @@ router.delete('/:id', verifyToken, function(req, res, next){
     } 
 });
 
-
 module.exports = router;
-
-// TODO always return message and data
