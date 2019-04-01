@@ -22,8 +22,7 @@ router.post('/', verifyToken, function(req, res, next){
     if (req.body.date) { 
         var year = req.body.date.slice(0,4);
         var month = req.body.date.slice(5,7);
-        var date = req.body.date.slice(6,8);
-        console.log(req.body.date)
+        var date = req.body.date.slice(8,10);
 
         class_date = date + '/' + month + '/' + year;
     }
