@@ -20,6 +20,7 @@ router.post('/', verifyToken, function(req, res, next){
 
     var class_date = "-";
     if (req.body.date) { 
+        console.log(req.body.date)
         console.log(typeof(req.body.date));
         console.log(req.body.date.getMonth);
         console.log(req.body.date.getFullYear);
