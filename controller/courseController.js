@@ -99,7 +99,8 @@ router.post('/', verifyToken, function(req, res, next){
                 if (!course_added){
                     user.courses.push(course._id);
     
-                    user.save(function(err){
+                    user.save()
+                    .then(function(err){
                         if(err) return res.status(500).send({message: "There was a problem addding the course", data: null});
                         var student_gradebook = {
                             role: "student",
@@ -108,10 +109,35 @@ router.post('/', verifyToken, function(req, res, next){
                         }
                         var new_student = "course_gradebook." + String(user._id);
                         Course.findByIdAndUpdate(course._id, {$set: {[new_student]: student_gradebook}, $inc: {number_of_students: 1}}, {new: true}, function(err, course){
-                            if (err) return res.status(500).send({ message: "There was a problem adding the user to the course."});
-                            res.status(201).send({ message: "Course has been added."});
+                            if (err) return res.status(500).send({ message: "There was a problem adding the user to the course.", data: null});
+                            Promise.all(user.courses.map(async (course_id) => {
+                                return await Course.findById(course_id, {course_gradebook: 0, lectures: 0});
+                            }))
+                            .then(courses => {
+                                user_with_courses = {
+                                    first_name: user.first_name,
+                                    last_name: user.last_name,
+                                    email: user.email,
+                                    role: user.role,
+                                    school: user.school,
+                                    courses : courses
+                                }
+                                res.status(200).send({  message: "Course has been added to student.",
+                                                        data: user_with_courses
+                                                    });
+                            })
+                            .catch(err => {
+                                res.status(500).send({  message: "There was a problem getting the courses.",
+                                                        data: null
+                                                    });
+                            }); 
                         });
-                    });
+                    })
+                    .catch(err => {
+                        res.status(500).send({  message: "There was a problem adding the course to the user.",
+                                                data: null
+                                            });
+                    }); 
                 } else {
                     res.status(409).send({ message: "Course is already in the student course list.", data: null});
                 }
@@ -185,7 +211,7 @@ router.put('/:id', verifyToken, function(req, res, next){
                 .catch(err => {
                     res.status(500).send({  message: "There was a problem getting the courses.",
                                             data: null});
-                }) 
+                }); 
             });
         })
         .catch(err => {
