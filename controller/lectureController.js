@@ -176,7 +176,6 @@ router.delete('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next)
             });
         });
     });
-
 });
 
 
