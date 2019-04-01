@@ -100,8 +100,7 @@ router.post('/', verifyToken, function(req, res, next){
                     user.courses.push(course._id);
     
                     user.save()
-                    .then(function(err){
-                        if(err) return res.status(500).send({message: "There was a problem addding the course", data: null});
+                    .then(function(){
                         var student_gradebook = {
                             role: "student",
                             overall: "NA",
