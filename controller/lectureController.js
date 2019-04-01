@@ -23,6 +23,10 @@ router.post('/', verifyToken, function(req, res, next){
         var year = req.body.date.slice(0,4);
         var month = req.body.date.slice(5,7);
         var date = req.body.date.slice(8,10);
+        console.log(req.body.date)
+        console.log(year)
+        console.log(month)
+        console.log(date)
 
         class_date = date + '/' + month + '/' + year;
     }
