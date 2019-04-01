@@ -18,7 +18,12 @@ router.post('/', verifyToken, function(req, res, next){
     }
 
     var class_date = "-";
-    if (req.body.date) { class_date = req.body.date.trim(); }
+    if (req.body.date) { 
+        var date = toString(req.body.date.getDate);
+        var month = toString(req.body.date.getMonth);
+        var year = toString(req.body.date.getFullYear);
+        class_date = month + '/' + date + '/' + year;
+    }
 
     Counter.findByIdAndUpdate("lecture_id", {$inc: {value: 1}}, {new: true}).then(function(counter){
         var lecture = {
