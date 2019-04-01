@@ -23,7 +23,7 @@ router.post('/', verifyToken, function(req, res, next){
     Counter.findByIdAndUpdate("lecture_id", {$inc: {value: 1}}, {new: true}).then(function(counter){
         var lecture = {
             id: counter.value,
-            class_date: class_date,
+            date: class_date,
             description: description,
             in_progess: false,
             quizzes: []
