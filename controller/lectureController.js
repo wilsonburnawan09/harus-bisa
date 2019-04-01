@@ -10,6 +10,7 @@ var verifyToken = require('./auth/verifyTokenMiddleware');
 
 // create lecture
 router.post('/', verifyToken, function(req, res, next){
+    console.log('masuk')
     if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
     if (!req.body.description) {
         return res.status(500).send({ message: "Please provide description.", data: null});
