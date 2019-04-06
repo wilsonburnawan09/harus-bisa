@@ -18,23 +18,15 @@ router.post('/', verifyToken, function(req, res, next){
         description = req.body.description.trim();
     }
 
-    var class_date = "-";
+    var date = "-";
     if (req.body.date) { 
-        var year = req.body.date.slice(0,4);
-        var month = req.body.date.slice(5,7);
-        var date = req.body.date.slice(8,10);
-        console.log(req.body.date)
-        console.log(year)
-        console.log(month)
-        console.log(date)
-
-        class_date = date + '/' + month + '/' + year;
+        date = req.body.date.trim();
     }
 
     Counter.findByIdAndUpdate("lecture_id", {$inc: {value: 1}}, {new: true}).then(function(counter){
         var lecture = {
             id: counter.value,
-            date: class_date,
+            date: date,
             description: description,
             in_progess: false,
             quizzes: []
@@ -74,7 +66,7 @@ router.get('/', verifyToken, function(req,res,next){
 
 // delete lecture
 router.delete('/:lecture_id', verifyToken, function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
+    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to delete lecture.", data: null});
     Course.findById(req.params.course_id, function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
         if (!course) return res.status(404).send({ message: "Course not found.", data: null});
@@ -89,6 +81,29 @@ router.delete('/:lecture_id', verifyToken, function(req,res,next){
 });
 
 // update lecture
+router.put('/:lecture_id', verifyToken, function(req,res,next){
+    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update lecture.", data: null});
+    Course.findById(req.params.course_id, function(err, course){
+        if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
+        if (!course) return res.status(404).send({ message: "Course not found.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+
+        for(var i=0; i<course.lectures.length; i++){
+            if ( course.lectures[i].id == req.params.lecture_id) {
+                if (req.body.date) { course.lectures[i].date = req.body.date.trim(); }
+                if (req.body.description) { course.lectures[i].description = req.body.description.trim(); }
+                break;
+            }
+        }
+        course.markModified('lectures');
+        course.save().then( () => { 
+            res.status(200).send({ message: "Lecture has been updated.", data: course})
+        })
+        .catch(err => {
+            res.status(500).send({ message: "There was a problem updating the lecture.", data: null});
+        });
+    });
+});
 
 // create quiz
 router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
@@ -110,7 +125,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
         }
 
 
-        if (!req.body.answers || req.body.answers.length === 0 ) {
+        if (!req.body.answers || req.body.answers.length == 0 ) {
             return res.status(500).send({ message: "Please provide answers (number).", data: null});
         } else {
             for(var i=0; i<req.body.answers.length; i++){
@@ -154,7 +169,6 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             participation_reward_percentage: participation_reward_percentage
         };
 
-
         Course.findByIdAndUpdate(req.params.course_id, {$push: {"lectures.$[i].quizzes": quiz}}, {arrayFilters: [{"i.id": Number(req.params.lecture_id)}], new: true, projection: {course_gradebook: 0}}, function(err, course){
             if (err) return res.status(500).send({ message: "There was a problem updating for the course.", data: null});
             if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null});
@@ -189,7 +203,61 @@ router.delete('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next)
     });
 });
 
-
 // update quiz
+router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
+    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
+    Course.findById(req.params.course_id, function(err, course){
+        if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
+        if (!course) return res.status(404).send({ message: "Course not found.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (isNaN(req.params.index)) return res.status(500).send({ message: "Index is not a number.", data: null});
+
+        var quiz_index = req.params.index;
+        var lecture_index = null;
+        for(var i=0; i<course.lectures.length; i++){
+            if ( course.lectures[i].id == req.params.lecture_id) {
+                lecture_index = i;
+                break;
+            }
+        }
+
+        if (req.body.question) { course.lectures[lecture_index].quizzes[quiz_index].question = req.body.question.trim(); }
+
+        if (req.body.correct_answer && 
+            !isNaN(req.body.correct_answer) && 
+            Number(req.body.correct_answer) < course.lectures[lecture_index].quizzes[quiz_index].answers.length) {
+                course.lectures[lecture_index].quizzes[quiz_index].correct_answer = Number(req.body.correct_answer);
+        } 
+
+
+        if (!req.body.time_duration || isNaN(req.body.time_duration)) {
+            return res.status(500).send({ message: "Please provide time duration (number in seconds).", data: null});
+        } else {
+            time_duration = Number(req.body.time_duration);
+        }
+
+        if (!req.body.total_point || isNaN(req.body.total_point)) {
+            return res.status(500).send({ message: "Please provide total point (number) for problem.", data: null})
+        } else {
+            total_point = Number(req.body.total_point);
+        }
+
+        if (!req.body.participation_reward_percentage) {
+            participation_reward_percentage = 0;
+        } else if(isNaN(req.body.participation_reward_percentage) || Number(req.body.participation_reward_percentage) < 0 || Number(req.body.participation_reward_percentage) > 100) {
+            return res.status(500).send({ message: "Please provide percentage (number 0-100)", data: null})
+        } else {
+            participation_reward_percentage = Number(req.body.participation_reward_percentage);
+        }
+
+        course.markModified('lectures');
+        course.save().then( () => { 
+            res.status(200).send({ message: "Quiz has been updated.", data: course})
+        })
+        .catch(err => {
+            res.status(500).send({ message: "There was a problem updating the quiz.", data: null});
+        });
+    });
+});
 
 module.exports = router;
