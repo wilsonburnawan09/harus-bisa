@@ -93,7 +93,7 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
                 if (req.body.date) { course.lectures[i].date = req.body.date.trim(); }
                 if (req.body.description) { 
                     if (req.body.description.trim() == ""){
-                        course.lectures[i].description = null;
+                        course.lectures[i].description = "";
                     } else {
                         course.lectures[i].description = req.body.description.trim(); 
                     }
@@ -134,8 +134,12 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
         if (!req.body.answers || req.body.answers.length == 0 ) {
             return res.status(500).send({ message: "Please provide answers (number).", data: null});
         } else {
-            for(var i=0; i<req.body.answers.length; i++){
-                answers.push(req.body.answers[i].trim());
+            if (!Array.isArray(req.body.answers)){
+                answers.push(req.body.answers.trim());
+            } else {
+                for(var i=0; i<req.body.answers.length; i++){
+                    answers.push(req.body.answers[i].trim());
+                }
             }
         }
         
