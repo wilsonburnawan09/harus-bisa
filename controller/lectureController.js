@@ -91,11 +91,16 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
         for(var i=0; i<course.lectures.length; i++){
             if ( course.lectures[i].id == req.params.lecture_id) {
                 if (req.body.date) { course.lectures[i].date = req.body.date.trim(); }
-                if (req.body.description) { course.lectures[i].description = req.body.description.trim(); }
+                if (req.body.description) { 
+                    if (req.body.description.trim() == ""){
+                        course.lectures[i].description = "";
+                    } else {
+                        course.lectures[i].description = req.body.description.trim(); 
+                    }
+                }
                 break;
             }
         }
-        console.log(req.body.description)
         course.markModified('lectures');
         course.save().then( () => { 
             res.status(200).send({ message: "Lecture has been updated.", data: course})
