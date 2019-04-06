@@ -101,7 +101,6 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
                 break;
             }
         }
-        console.log(typeof(req.body.description))
         course.markModified('lectures');
         course.save().then( () => { 
             res.status(200).send({ message: "Lecture has been updated.", data: course})
