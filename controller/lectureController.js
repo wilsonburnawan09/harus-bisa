@@ -95,6 +95,7 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
                 break;
             }
         }
+        console.log(req.body.description)
         course.markModified('lectures');
         course.save().then( () => { 
             res.status(200).send({ message: "Lecture has been updated.", data: course})
@@ -221,33 +222,28 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
             }
         }
 
+        if (course.lectures[lecture_index] == null) { return res.status(500).send({ message: "Lecture not found.", data: null}); }
+        if (course.lectures[lecture_index].quizzes[quiz_index] == null) { return res.status(500).send({ message: "Quiz not found.", data: null}); }
+
         if (req.body.question) { course.lectures[lecture_index].quizzes[quiz_index].question = req.body.question.trim(); }
 
         if (req.body.correct_answer && 
             !isNaN(req.body.correct_answer) && 
-            Number(req.body.correct_answer) < course.lectures[lecture_index].quizzes[quiz_index].answers.length) {
+            Number(req.body.correct_answer) < course.lectures[lecture_index].quizzes[quiz_index].answers.length &&
+            Number(req.body.correct_answer) >= 0) {
                 course.lectures[lecture_index].quizzes[quiz_index].correct_answer = Number(req.body.correct_answer);
         } 
 
-
-        if (!req.body.time_duration || isNaN(req.body.time_duration)) {
-            return res.status(500).send({ message: "Please provide time duration (number in seconds).", data: null});
-        } else {
-            time_duration = Number(req.body.time_duration);
+        if (req.body.time_duration && !isNaN(req.body.time_duration)) {
+            course.lectures[lecture_index].quizzes[quiz_index].time_duration = Number(req.body.time_duration);
         }
 
-        if (!req.body.total_point || isNaN(req.body.total_point)) {
-            return res.status(500).send({ message: "Please provide total point (number) for problem.", data: null})
-        } else {
-            total_point = Number(req.body.total_point);
-        }
-
-        if (!req.body.participation_reward_percentage) {
-            participation_reward_percentage = 0;
-        } else if(isNaN(req.body.participation_reward_percentage) || Number(req.body.participation_reward_percentage) < 0 || Number(req.body.participation_reward_percentage) > 100) {
-            return res.status(500).send({ message: "Please provide percentage (number 0-100)", data: null})
-        } else {
-            participation_reward_percentage = Number(req.body.participation_reward_percentage);
+        if (req.body.total_point && !isNaN(req.body.total_point)) {
+            course.lectures[lecture_index].quizzes[quiz_index].total_point = Number(req.body.total_point);
+        } 
+        
+        if (req.body.participation_reward_percentage && !isNaN(req.body.participation_reward_percentage)  && Number(req.body.participation_reward_percentage) >= 0 && Number(req.body.participation_reward_percentage) <= 100) {
+            course.lectures[lecture_index].quizzes[quiz_index].participation_reward_percentage = Number(req.body.participation_reward_percentage);
         }
 
         course.markModified('lectures');
