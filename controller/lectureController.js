@@ -94,6 +94,7 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
                 if (req.body.description) { 
                     if (req.body.description.trim() == ""){
                         course.lectures[i].description = "";
+                        console.log('whitespace');
                     } else {
                         course.lectures[i].description = req.body.description.trim(); 
                     }
