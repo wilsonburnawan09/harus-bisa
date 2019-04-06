@@ -93,7 +93,7 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
                 if (req.body.date) { course.lectures[i].date = req.body.date.trim(); }
                 if (req.body.description) { 
                     if (req.body.description.trim() == ""){
-                        course.lectures[i].description = " ";
+                        course.lectures[i].description = null;
                     } else {
                         course.lectures[i].description = req.body.description.trim(); 
                     }
