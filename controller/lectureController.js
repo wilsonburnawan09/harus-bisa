@@ -94,6 +94,7 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
                 if (req.body.description) { 
                     if (req.body.description.trim() == ""){
                         course.lectures[i].description = " ";
+                        print(course.lectures[i].description + "test")
                     } else {
                         course.lectures[i].description = req.body.description.trim(); 
                     }
@@ -101,6 +102,8 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
                 break;
             }
         }
+        console.log(typeof(course.lectures[i].description))
+        console.log(course.lectures[i].description)
         course.markModified('lectures');
         course.save().then( () => { 
             res.status(200).send({ message: "Lecture has been updated.", data: course})
