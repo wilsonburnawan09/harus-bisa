@@ -222,9 +222,7 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
         if (isNaN(req.params.index)) return res.status(500).send({ message: "Index is not a number.", data: null});
 
-        var quiz_index = req.params.index;
-        console.log(quiz_index);
-        console.log(typeof(quiz_index));
+        var quiz_index = Number(req.params.index);
         var lecture_index = null;
         for(var i=0; i<course.lectures.length; i++){
             if ( course.lectures[i].id == req.params.lecture_id) {
