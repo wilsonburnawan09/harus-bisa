@@ -144,6 +144,8 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
         }
         
         if (!req.body.correct_answer || isNaN(req.body.correct_answer) || Number(req.body.correct_answer) >= req.body.answers.length) {
+            console.log(req.body.correct_answer);
+            console.log(req.body.answer.length);
             return res.status(500).send({ message: "Please provide correct answer index.", data: null});
         } else {
             correct_answer = Number(req.body.correct_answer);
