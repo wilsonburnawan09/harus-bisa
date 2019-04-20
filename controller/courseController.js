@@ -27,14 +27,18 @@ router.post('/', verifyToken, function(req, res, next){
             course_name = req.body.course_name.trim();
         }
 
-        if (req.body.start_term) {
+        if (req.body.start_term != null) {
             start_term = req.body.start_term.trim();
-        }
-        if (req.body.end_term) {
-            end_term = req.body.end_term.trim();
-        }
+        } 
 
-        if (req.body.description) { description = req.body.description.trim();}
+        if (req.body.end_term != null) {
+            end_term = req.body.end_term.trim();
+        } 
+
+        if (req.body.description != null) { 
+            description = req.body.description.trim();
+        } 
+
         Counter.findByIdAndUpdate("join_code", {$inc: {value: 1}}, {new: true}).then(function(counter){
             Course.create({
                 course_name: course_name,
@@ -181,11 +185,11 @@ router.put('/:id', verifyToken, function(req, res, next){
         if (!course) return res.status(404).send({ message: "Course " + req.params.id + " not found."});
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "The ID provided does not match the instructor ID for the course."});
 
-        if (req.body.course_name) { course.course_name = req.body.course_name.trim(); }
-        if (req.body.start_term) { course.start_term = req.body.start_term.trim(); }
-        if (req.body.end_term) { course.end_term = req.body.end_term.trim(); }
-        if (req.body.description) { course.description = req.body.description.trim(); }
-        if (req.body.instructor) { course.instructor = req.body.instructor.trim(); } 
+        if (req.body.course_name != null) { course.course_name = req.body.course_name.trim(); }
+        if (req.body.start_term != null) { course.start_term = req.body.start_term.trim(); }
+        if (req.body.end_term != null) { course.end_term = req.body.end_term.trim(); }
+        if (req.body.description != null) { course.description = req.body.description.trim(); }
+        if (req.body.instructor != null) { course.instructor = req.body.instructor.trim(); } 
 
         course.save().then(function(){
             User.findById(req.userId, function(err, user){
