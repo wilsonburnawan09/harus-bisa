@@ -299,7 +299,6 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
             }
         }
 
-
         course.markModified('lectures');
         course.save().then( () => { 
             return res.status(200).send({ message: "Quiz has been updated.", data: course})
