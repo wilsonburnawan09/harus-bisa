@@ -246,6 +246,7 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
         }
 
         var quiz_index = req.params.index;
+
         if (course.lectures[lecture_index] == null) { return res.status(500).send({ message: "Lecture not found.", data: null}); }
         if (course.lectures[lecture_index].quizzes[quiz_index] == null) { return res.status(500).send({ message: "Quiz not found.", data: null}); }
 
@@ -275,7 +276,8 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
         }
 
 
-        if (req.body.correct_answer) {
+        console.log(req.body.correct_answer)
+        if (req.body.correct_answer != null) {
             if (!isNaN(req.body.correct_answer) && 
             req.body.correct_answer < course.lectures[lecture_index].quizzes[quiz_index].answers.length &&
             req.body.correct_answer >= 0) {
@@ -332,8 +334,6 @@ router.put('/:lecture_id/quizzes/:index/order/:direction', verifyToken, function
         var quiz_index = Number(req.params.index);
         if (course.lectures[lecture_index] == null) { return res.status(500).send({ message: "Lecture not found.", data: null}); }
         if (course.lectures[lecture_index].quizzes[quiz_index] == null) { return res.status(500).send({ message: "Quiz not found.", data: null}); }
-
-        console.log(quiz_index)
 
         var dir = req.params.direction;
         if (dir != "up" && dir != "down"){
