@@ -13,6 +13,7 @@ router.post('/', verifyToken, function(req, res, next){
     if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
     var description = "";
     var date = "-";
+    var participation_reward_percentage = 0;
 
     if (req.body.description != null) {
         description = req.body.description.trim();
@@ -22,12 +23,21 @@ router.post('/', verifyToken, function(req, res, next){
         date = req.body.date.trim();
     }
 
+    if (!req.body.participation_reward_percentage) {
+        participation_reward_percentage = 0;
+    } else if(isNaN(req.body.participation_reward_percentage) || Number(req.body.participation_reward_percentage) < 0 || Number(req.body.participation_reward_percentage) > 100) {
+        return res.status(500).send({ message: "Please provide percentage (number 0-100)", data: null})
+    } else {
+        participation_reward_percentage = Number(req.body.participation_reward_percentage);
+    }
+
     Counter.findByIdAndUpdate("lecture_id", {$inc: {value: 1}}, {new: true}).then(function(counter){
         var lecture = {
             id: counter.value,
             date: date,
             description: description,
             in_progess: false,
+            participation_reward_percentage: participation_reward_percentage,
             quizzes: []
         }
     
@@ -93,6 +103,13 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
                 if (req.body.description != null) { 
                     course.lectures[i].description = req.body.description.trim(); 
                 }
+                if (req.body.participation_reward_percentage) {
+                    if (!isNaN(req.body.participation_reward_percentage) && req.body.participation_reward_percentage >= 0 && req.body.participation_reward_percentage <= 100) {
+                        course.lectures[i].participation_reward_percentage = Number(req.body.participation_reward_percentage);
+                    } else {
+                        return res.status(500).send({ message: "Please provide valid participation_reward_percentage.", data: null});
+                    }
+                }
                 break;
             }
         }
@@ -116,7 +133,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
 
 
-        var question, correct_answer, time_duration, total_point, participation_reward_percentage;
+        var question, correct_answer, time_duration, question_point;
         var answers = [];
 
         if (req.body.question) {
@@ -151,18 +168,10 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             time_duration = Number(req.body.time_duration);
         }
 
-        if (!req.body.total_point || isNaN(req.body.total_point)) {
-            return res.status(500).send({ message: "Please provide total point (number) for problem.", data: null})
+        if (!req.body.question_point || isNaN(req.body.question_point)) {
+            return res.status(500).send({ message: "Please provide question point (number) for problem.", data: null})
         } else {
-            total_point = Number(req.body.total_point);
-        }
-
-        if (!req.body.participation_reward_percentage) {
-            participation_reward_percentage = 0;
-        } else if(isNaN(req.body.participation_reward_percentage) || Number(req.body.participation_reward_percentage) < 0 || Number(req.body.participation_reward_percentage) > 100) {
-            return res.status(500).send({ message: "Please provide percentage (number 0-100)", data: null})
-        } else {
-            participation_reward_percentage = Number(req.body.participation_reward_percentage);
+            question_point = Number(req.body.question_point);
         }
 
         var quiz = {
@@ -170,8 +179,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             answers: answers,
             correct_answer: correct_answer,
             time_duration: time_duration,
-            total_point: total_point,
-            participation_reward_percentage: participation_reward_percentage
+            question_point: question_point,
         };
 
         Course.findByIdAndUpdate(req.params.course_id, {$push: {"lectures.$[i].quizzes": quiz}}, {arrayFilters: [{"i.id": Number(req.params.lecture_id)}], new: true, projection: {course_gradebook: 0}}, function(err, course){
@@ -283,19 +291,11 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
             }
         }
         
-        if (req.body.total_point) {
-            if (!isNaN(req.body.total_point)) {
-                course.lectures[lecture_index].quizzes[quiz_index].total_point = Number(req.body.total_point);
+        if (req.body.question_point) {
+            if (!isNaN(req.body.question_point)) {
+                course.lectures[lecture_index].quizzes[quiz_index].question_point = Number(req.body.question_point);
             } else {
-                return res.status(500).send({ message: "Please provide valid total_point.", data: null});
-            }
-        }
-        
-        if (req.body.participation_reward_percentage) {
-            if (!isNaN(req.body.participation_reward_percentage) && req.body.participation_reward_percentage >= 0 && req.body.participation_reward_percentage <= 100) {
-                course.lectures[lecture_index].quizzes[quiz_index].participation_reward_percentage = Number(req.body.participation_reward_percentage);
-            } else {
-                return res.status(500).send({ message: "Please provide valid participation_reward_percentage.", data: null});
+                return res.status(500).send({ message: "Please provide valid question point.", data: null});
             }
         }
 
