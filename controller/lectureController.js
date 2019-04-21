@@ -133,7 +133,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
 
 
-        var question, correct_answer, time_duration, question_point;
+        var question, correct_answer, time_duration, point;
         var answers = [];
 
         if (req.body.question) {
@@ -168,10 +168,10 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             time_duration = Number(req.body.time_duration);
         }
 
-        if (!req.body.question_point || isNaN(req.body.question_point)) {
+        if (!req.body.point || isNaN(req.body.point)) {
             return res.status(500).send({ message: "Please provide question point (number) for problem.", data: null})
         } else {
-            question_point = Number(req.body.question_point);
+            point = Number(req.body.point);
         }
 
         var quiz = {
@@ -179,7 +179,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             answers: answers,
             correct_answer: correct_answer,
             time_duration: time_duration,
-            question_point: question_point,
+            point: point,
         };
 
         Course.findByIdAndUpdate(req.params.course_id, {$push: {"lectures.$[i].quizzes": quiz}}, {arrayFilters: [{"i.id": Number(req.params.lecture_id)}], new: true, projection: {course_gradebook: 0}}, function(err, course){
@@ -291,9 +291,9 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
             }
         }
         
-        if (req.body.question_point) {
-            if (!isNaN(req.body.question_point)) {
-                course.lectures[lecture_index].quizzes[quiz_index].question_point = Number(req.body.question_point);
+        if (req.body.point) {
+            if (!isNaN(req.body.point)) {
+                course.lectures[lecture_index].quizzes[quiz_index].point = Number(req.body.point);
             } else {
                 return res.status(500).send({ message: "Please provide valid question point.", data: null});
             }
@@ -302,12 +302,66 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
 
         course.markModified('lectures');
         course.save().then( () => { 
-            res.status(200).send({ message: "Quiz has been updated.", data: course})
+            return res.status(200).send({ message: "Quiz has been updated.", data: course})
         })
         .catch(err => {
-            res.status(500).send({ message: "There was a problem updating the quiz.", data: null});
+            return res.status(500).send({ message: "There was a problem updating the quiz.", data: null});
         });
     });
 });
 
 module.exports = router;
+
+// update quiz order
+router.put('/:lecture_id/quizzes/:index/order/:direction', verifyToken, function(req,res,next){
+    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
+    Course.findById(req.params.course_id, function(err, course){
+        if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
+        if (!course) return res.status(404).send({ message: "Course not found.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (isNaN(req.params.index)) return res.status(500).send({ message: "Index is not a number.", data: null});
+
+        var lecture_index = null;
+        for(var i=0; i<course.lectures.length; i++){
+            if ( course.lectures[i].id == req.params.lecture_id) {
+                lecture_index = i;
+                break;
+            }
+        }
+
+        var quiz_index = Number(req.params.index);
+        if (course.lectures[lecture_index] == null) { return res.status(500).send({ message: "Lecture not found.", data: null}); }
+        if (course.lectures[lecture_index].quizzes[quiz_index] == null) { return res.status(500).send({ message: "Quiz not found.", data: null}); }
+
+        var dir = req.params.direction;
+        if (dir != "up" && dir != "down"){
+            return res.status(500).send({ message: "Direction is invalid (only accepts 'up' or 'down')."});
+        } else {
+            if (dir == "up"){
+                if (quiz_index == 0){
+                    return res.status(500).send({ message: "Cannot go up, you are at the top.", data: null});
+                } else {
+                    var temp = course.lectures[lecture_index].quizzes[quiz_index-1];
+                    course.lectures[lecture_index].quizzes[quiz_index-1] = course.lectures[lecture_index].quizzes[quiz_index];
+                    course.lectures[lecture_index].quizzes[quiz_index] = temp;
+                }
+            } else if (dir == "down"){
+                if (quiz_index == course.lectures[lecture_index].quizzes.length - 1){
+                    return res.status(500).send({ message: "Cannot go down, you are at the bottom.", data: null});
+                } else {
+                    var temp = course.lectures[lecture_index].quizzes[quiz_index+1];
+                    course.lectures[lecture_index].quizzes[quiz_index+1] = course.lectures[lecture_index].quizzes[quiz_index];
+                    course.lectures[lecture_index].quizzes[quiz_index] = temp;
+                }
+            }
+        }
+        
+        course.markModified('lectures');
+        course.save().then( () => { 
+            return res.status(200).send({ message: "Quiz order has been updated.", data: course})
+        })
+        .catch(err => {
+            return res.status(500).send({ message: "There was a problem updating the quiz.", data: null});
+        });
+    });
+});
