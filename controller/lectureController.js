@@ -155,7 +155,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             }
         }
         
-        if (!req.body.correct_answer || isNaN(req.body.correct_answer) || Number(req.body.correct_answer) >= req.body.answers.length) {
+        if (req.body.correct_answer == null || isNaN(req.body.correct_answer) || Number(req.body.correct_answer) >= req.body.answers.length) {
             return res.status(500).send({ message: "Please provide correct answer index.", data: null});
         } else {
             correct_answer = Number(req.body.correct_answer);
@@ -275,8 +275,6 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
             course.lectures[lecture_index].quizzes[quiz_index].answers = answers.slice(0);
         }
 
-
-        console.log(req.body.correct_answer)
         if (req.body.correct_answer != null) {
             if (!isNaN(req.body.correct_answer) && 
             req.body.correct_answer < course.lectures[lecture_index].quizzes[quiz_index].answers.length &&
