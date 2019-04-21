@@ -328,9 +328,12 @@ router.put('/:lecture_id/quizzes/:index/order/:direction', verifyToken, function
             }
         }
 
+
         var quiz_index = Number(req.params.index);
         if (course.lectures[lecture_index] == null) { return res.status(500).send({ message: "Lecture not found.", data: null}); }
         if (course.lectures[lecture_index].quizzes[quiz_index] == null) { return res.status(500).send({ message: "Quiz not found.", data: null}); }
+
+        console.log(quiz_index)
 
         var dir = req.params.direction;
         if (dir != "up" && dir != "down"){
