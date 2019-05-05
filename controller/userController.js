@@ -62,7 +62,6 @@ router.put('/:user_id', verifyToken, async function (req, res, next) {
             } else {
                 var target_user = User.findById(req.params.user_id);
                 var old_password_match = await target_user.then((user) => {
-                    // console.log(old_password)
                     var passwordIsValid = bcrypt.compareSync(req.body.old_password, user.password);
                     if (passwordIsValid) {
                         return true;
@@ -70,7 +69,6 @@ router.put('/:user_id', verifyToken, async function (req, res, next) {
                         return false;
                     }
                 });
-                console.log(old_password_match)
                 if(!old_password_match) {
                     return res.status(403).send({ message: "Old password does not match.", data: null});
                 } else {
