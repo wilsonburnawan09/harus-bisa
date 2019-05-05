@@ -7,77 +7,83 @@ router.use(bodyParser.json());
 var User = require('../model/User');
 var verifyToken = require('./auth/verifyTokenMiddleware');
 
-// // get a user by id
-// router.get('/:id', verifyToken, function(req, res, next) {
-//     if (req.userId != req.params.id) {
-//         res.status(401).send({ message: "ID does not match with ID in token."});
-//     } else {
-//         User.findById(req.params.id, function (err, user) {
-//             if (err) return res.status(500).send({ message: "There was a problem finding the user."});
-//             if (!user) return res.status(404).send({ message: "User " + req.params.id + " not found."});
-//             res.status(200).send(user);
-//         });
-//     }
-// });
-
-router.get('/', function(req,res){
-    res.status('Hello');
-})
+// get a user by id
+router.get('/:user_id', verifyToken, function(req, res, next) {
+    if (req.userId != req.params.user_id) {
+        res.status(401).send({ message: "ID does not match with ID in token.", data: null});
+    } else {
+        User.findById(req.params.user_id, {password: 0, courses: 0}, function (err, user) {
+            if (err) return res.status(500).send({ message: "There was a problem finding the user.", data: null});
+            if (!user) return res.status(404).send({ message: "User " + req.params.id + " not found.", data: null});
+            res.status(200).send({ message: "Get user is a success.", data:user });
+        });
+    }
+});
 
 // delete a user by id
-router.delete('/:id', verifyToken, function (req, res, next) {
-    if (req.userId != req.params.id) {
-        res.status(401).send({ message: "ID does not match with ID in token."});
+router.delete('/:user_id', verifyToken, function (req, res, next) {
+    if (req.userId != req.params.user_id) {
+        res.status(401).send({ message: "ID does not match with ID in token.", data: null});
     } else {
-        User.findByIdAndDelete(req.params.id, function (err, user) {
-            if (err) return res.status(500).send({ message: "There was a problem deleting the user."});
-            if (!user) return res.status(404).send({ message: "User " + req.params.id + " not found."})
-            res.status(200).send({message: "User: " + req.params.id + " was deleted."});
+        User.findByIdAndDelete(req.params.user_id, {projection: {courses: 0, password: 0}}, function (err, user) {
+            if (err) return res.status(500).send({ message: "There was a problem deleting the user.", data: null});
+            if (!user) return res.status(404).send({ message: "User " + req.params.user_id + " not found.", data: null})
+            res.status(200).send({message: "User: " + req.params.user_id + " was deleted.", data: user});
         });
     }
 });
 
 // update a user by id
-router.put('/:id', verifyToken, function (req, res, next) {
-    if (req.userId != req.params.id) {
+router.put('/:user_id', verifyToken, async function (req, res, next) {
+    if (req.userId != req.params.user_id) {
         res.status(401).send({ message: "ID does not match ID in token."});
     } else {
-        var first_name = "";
-        var last_name = "";
-        var email = "";
-        var school = "";
-        var role = "";
-        var hashed_password = "";
-        if(req.body.first_name) {first_name = req.body.first_name.trim();}
-        if(req.body.last_name) {last_name = req.body.last_name.trim();}
-        if(!req.body.email){
-            return res.status(500).send({ message: "Email not provided."});
-        }else{
-            email = req.body.email.trim();
+        user = {};
+        if (req.body.first_name != null) {
+            user["first_name"] = req.body.first_name.trim();
         }
-        if (req.body.school) {school = req.body.school.trim();}
-        if (!req.body.role){
-            return res.status(500).send({ message: "Role not provided"});
-        }else{
-            role = req.body.role.trim();
+        if (req.body.last_name != null) {
+            user["last_name"] = req.body.last_name.trim();
         }
-        if (!req.body.password){
-            return res.status(500).send({ message: "Password not provided."})
-        }else{
-            hashed_password = bcrypt.hashSync(req.body.password, 8);
+        if (req.body.school != null) {
+            user["school"] = req.body.school.trim();
         }
-        user = {
-            first_name: first_name,
-            last_name: last_name,
-            email: email,
-            school: school,
-            role: role,
-            password: hashed_password
+        // if (req.body.role != null) {
+        //     if (req.body.role != "professor" && req.body.role != "student") {
+        //         return res.status(500).send({ message: "Role must be 'professor' or 'student'", data: null});
+        //     } else {
+        //         user["role"] = req.body.role.trim();
+        //     }            
+        // }
+
+        if (req.body.new_password != null) {
+            if (req.body.old_password == null) {
+                return res.status(500).send({ message: "Please provide old password", data: null});
+            } else {
+                var target_user = User.findById(req.params.user_id);
+                var old_password_match = await target_user.then((user) => {
+                    // console.log(old_password)
+                    var passwordIsValid = bcrypt.compareSync(req.body.old_password, user.password);
+                    if (passwordIsValid) {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                });
+                console.log(old_password_match)
+                if(!old_password_match) {
+                    return res.status(403).send({ message: "Old password does not match.", data: null});
+                } else {
+                    user["password"] = bcrypt.hashSync(req.body.new_password, 8);
+                }
+            }
         }
-        User.findOneAndUpdate({ _id: req.params.id}, {$set: user}, {new: true}, function (err, user) {
-            if (err) return res.status(500).send({ message: "There was an error updating the user."});
-            if (!user) return res.status(404).send({ message: "User " + req.params.id + " not found"});
-            res.status(200).send(user);
+
+        User.findByIdAndUpdate(req.params.user_id, {$set: user}, {new: true, projection: {password: 0, courses: 0}}, function (err, user) {
+            if (err) return res.status(500).send({ message: "There was an error updating the user.", data: null});
+            if (!user) return res.status(404).send({ message: "User " + req.params.user_id + " not found", data: null});
+            res.status(200).send({ message: "User has been updated.", data: user});
+            
         });
     }
 });

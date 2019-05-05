@@ -61,6 +61,7 @@ router.post('/', verifyToken, function(req, res, next){
                     }))
                     .then(courses => {
                         user_with_courses = {
+                            _id: user._id,
                             first_name: user.first_name,
                             last_name: user.last_name,
                             email: user.email,
@@ -118,6 +119,7 @@ router.post('/', verifyToken, function(req, res, next){
                             }))
                             .then(courses => {
                                 user_with_courses = {
+                                    _id: user._id,
                                     first_name: user.first_name,
                                     last_name: user.last_name,
                                     email: user.email,
@@ -159,12 +161,13 @@ router.get('/', verifyToken, function(req, res, next){
         }))
         .then(courses => {
             user_with_courses = {
+                _id: user._id,
                 first_name: user.first_name,
                 last_name: user.last_name,
                 email: user.email,
                 role: user.role,
                 school: user.school,
-                courses : courses
+                courses : courses,
             }
             res.status(200).send({  message: "Get course is a success.",
                                     data: user_with_courses
@@ -200,6 +203,7 @@ router.put('/:id', verifyToken, function(req, res, next){
                 }))
                 .then(courses => {
                     user_with_courses = {
+                        _id: user._id,
                         first_name: user.first_name,
                         last_name: user.last_name,
                         email: user.email,
@@ -253,6 +257,7 @@ router.delete('/:id', verifyToken, function(req, res, next){
                         }))
                         .then(courses => {
                             user_with_courses = {
+                                _id: user._id,
                                 first_name: user.first_name,
                                 last_name: user.last_name,
                                 email: user.email,
@@ -291,6 +296,7 @@ router.delete('/:id', verifyToken, function(req, res, next){
                 }))
                 .then(courses => {
                     user_with_courses = {
+                        _id: user._id,
                         first_name: user.first_name,
                         last_name: user.last_name,
                         email: user.email,
