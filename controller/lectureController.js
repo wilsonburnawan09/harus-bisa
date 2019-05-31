@@ -36,6 +36,7 @@ router.post('/', verifyToken, function(req, res, next){
             id: counter.value,
             date: date,
             description: description,
+            live: false,
             in_progess: false,
             participation_reward_percentage: participation_reward_percentage,
             quizzes: []
