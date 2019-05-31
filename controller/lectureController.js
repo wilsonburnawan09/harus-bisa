@@ -309,8 +309,6 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
     });
 });
 
-module.exports = router;
-
 // update quiz order
 router.put('/:lecture_id/quizzes/:index/order/:direction', verifyToken, function(req,res,next){
     if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
@@ -365,3 +363,6 @@ router.put('/:lecture_id/quizzes/:index/order/:direction', verifyToken, function
         });
     });
 });
+
+
+module.exports = router;
