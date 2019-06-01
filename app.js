@@ -43,7 +43,7 @@ const io = require("socket.io")(server, {
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
     socket.on("set_socket_data", (user_id, user_role, lecture_ids) => {
-        console.log('hey')
+        console.log('hey');
         // socket.user_id = user_id;
         // socket.user_role = user_role;
         // socket.lecture_ids = lecture_ids;
