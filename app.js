@@ -15,15 +15,18 @@ var server = http.createServer(app);
 
 const io = require("socket.io")(server, {
     handlePreflightRequest: (req, res) => {
+        console.log('hello');
         const headers = {
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
             "Access-Control-Allow-Credentials": true
         };
+        
         res.writeHead(200, headers);
         res.end();
     }
 });
+
 
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
@@ -51,4 +54,4 @@ app.use('/api/courses', courseController);
 var lectureController = require('./controller/lectureController');
 app.use('/api/courses/:course_id/lectures', lectureController)
 
-module.exports = app;
+module.exports = server;
