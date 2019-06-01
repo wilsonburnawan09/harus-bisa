@@ -14,6 +14,7 @@ var http = require("http");
 var socketIO = require("socket.io");
 var server = http.createServer(app);
 var io = socketIO(server);
+io.set('transports', ['websocket', 'xhr-polling', 'jsonp-polling', 'htmlfile', 'flashsocket']);
 io.set('origins', '*:*');
 
 io.on("connection", socket => {
