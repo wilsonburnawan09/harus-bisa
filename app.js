@@ -13,8 +13,7 @@ app.use(cors());
 var http = require("http");
 var socketIO = require("socket.io");
 var server = http.createServer(app);
-var io = socketIO(server);
-io.origins('*:*')
+var io = socketIO(server, {origins:'*:*'});
 
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
