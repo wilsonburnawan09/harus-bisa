@@ -46,17 +46,12 @@ io.on("connection", socket => {
         socket.user_id = user_id;
         socket.user_role = user_role;
         socket.lecture_ids = lecture_ids;
-        console.log(user_id)
-        console.log(user_role)
-        console.log(socket.lecture_ids)
         if (socket.user_role === "student") {
             socket.lecture_ids.forEach(lecture => {
-                console.log('2haat')
                 socket.join(lecture);
-                console.log('The user is a ', socket.user_role);
-                console.log('The user is in room: ', socket.rooms);
             });
-            
+            console.log('The user is a ', socket.user_role);
+            console.log('The user is in room: ', socket.rooms);
         } else {
             console.log('The user is a ', socket.user_role);
             console.log('The user is in room: ', socket.rooms);
