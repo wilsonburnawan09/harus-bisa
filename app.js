@@ -42,25 +42,25 @@ const io = require("socket.io")(server, {
 
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
-    socket.on("set_socket_data", (user_id, user_role, lecture_ids) => {
-        console.log('hey')
-        socket.user_id = user_id;
-        socket.user_role = user_role;
-        socket.lecture_ids = lecture_ids;
-        if (socket.user_role === "student") {
-            socket.lecture_ids.forEach(lecture => {
-                socket.join(lecture);
-                console.log('The user is a ', socket.role);
-                console.log('The user is in room: ', socket.rooms);
-            });
-        } else {
-            console.log('The user is a ', socket.user_role);
-            console.log('The user is in room: ', socket.rooms);
-        }
-        socket.emit("saved_credential", { message: "User info is stored."})
-    });
+    // socket.on("set_socket_data", (user_id, user_role, lecture_ids) => {
+    //     console.log('hey')
+    //     socket.user_id = user_id;
+    //     socket.user_role = user_role;
+    //     socket.lecture_ids = lecture_ids;
+    //     if (socket.user_role === "student") {
+    //         socket.lecture_ids.forEach(lecture => {
+    //             socket.join(lecture);
+    //             console.log('The user is a ', socket.role);
+    //             console.log('The user is in room: ', socket.rooms);
+    //         });
+    //     } else {
+    //         console.log('The user is a ', socket.user_role);
+    //         console.log('The user is in room: ', socket.rooms);
+    //     }
+    //     socket.emit("saved_credential", { message: "User info is stored."})
+    // });
 
-    io.emit("au", "hey");
+    socket.emit("au", "hey");
 
     // socket.on("lecture_live", (role, lecture_id) => {
     //     if (socket.user_role == "professor"){
