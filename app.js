@@ -10,6 +10,18 @@ app.use(cors());
 //     next();
 // });
 
+var UserController = require('./controller/userController');
+app.use('/api/users', UserController);
+
+var authController = require('./controller/auth/authController');
+app.use('/api/', authController);
+
+var courseController = require('./controller/courseController');
+app.use('/api/courses', courseController);
+
+var lectureController = require('./controller/lectureController');
+app.use('/api/courses/:course_id/lectures', lectureController)
+
 var http = require("http");
 var server = http.createServer(app);
 
@@ -41,17 +53,5 @@ io.on("connection", socket => {
         console.log("user disconnected");
     });
 });
-
-var UserController = require('./controller/userController');
-app.use('/api/users', UserController);
-
-var authController = require('./controller/auth/authController');
-app.use('/api/', authController);
-
-var courseController = require('./controller/courseController');
-app.use('/api/courses', courseController);
-
-var lectureController = require('./controller/lectureController');
-app.use('/api/courses/:course_id/lectures', lectureController)
 
 module.exports = server;
