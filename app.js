@@ -4,18 +4,16 @@ var app = express();
 var db = require('./db');
 
 app.use(cors());
-app.all('/', function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "X-Requested-With");
-    next();
-});
+// app.all('/', function(req, res, next) {
+//     res.header("Access-Control-Allow-Origin", "*");
+//     res.header("Access-Control-Allow-Headers", "X-Requested-With");
+//     next();
+// });
 
 var http = require("http");
 var socketIO = require("socket.io");
 var server = http.createServer(app);
 var io = socketIO(server);
-io.set('transports', ['websocket', 'xhr-polling', 'jsonp-polling', 'htmlfile', 'flashsocket']);
-io.set('origins', '*:*');
 
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
