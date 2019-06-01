@@ -47,6 +47,7 @@ io.on("connection", socket => {
         socket.user_id = data.user_id;
         socket.user_role = data.user_role;
         socket.lecture_ids = data.lecture_ids;
+        console.log(socket.lecture_ids)
         if (socket.user_role === "student") {
             socket.lecture_ids.forEach(lecture => {
                 console.log('2haat')
