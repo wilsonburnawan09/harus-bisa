@@ -42,15 +42,40 @@ const io = require("socket.io")(server, {
 
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
-  
-    // Returning the initial data of food menu from FoodItems collection
-    socket.on("lecture_toggle_live", () => {
-        io.sockets.emit("lecture_is_live", 'hey');
-        // io.sockets.emit("get_data", docs);
+    socket.on("set_socket_data", (user_id, user_role, enrolled_courses) => {
+        socket.user_id = id;
+        socket.user_role = role;
+        socket.enrolled_courses = enrolled_courses;
+        if (socket.user_role === "student") {
+            socket.enrolled_courses.forEach(course => {
+                socket.join(course);
+                console.log('The user is a ', socket.role);
+                console.log('The user is in room: ', socket.rooms);
+            });
+        } else {
+            console.log('The user is a ', socket.role);
+            console.log('The user is in room: ', socket.rooms);
+        }
+        socket.emit("saved_credential", { message: "User info is stored."})
     });
 
+    // socket.on("lecture_live", (role, lecture_id) => {
+    //     if (socket.user_role == "professor"){
+    //         socket.join(room, () => {
+
+    //             socket.emit("lecture_is_live", true);
+    //         });
+    //     } else {
+    //         socket.emit("lecture_is_live", false);
+    //     }
+    // });
+
+    // socket.on("lecture_closed", (lecture_id) => {
+
+    // });
+
     socket.on("disconnect", () => {
-        console.log("user disconnected");
+        console.log("user ", socket.user_id, " ", socket.role);
     });
 });
 
