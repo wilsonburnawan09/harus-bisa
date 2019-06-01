@@ -64,8 +64,6 @@ io.on("connection", socket => {
         console.log(msg);
     });
 
-    console.log(socket)
-
     // socket.on("lecture_live", (role, lecture_id) => {
     //     if (socket.user_role == "professor"){
     //         socket.join(room, () => {
