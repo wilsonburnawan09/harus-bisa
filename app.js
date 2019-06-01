@@ -52,7 +52,7 @@ io.on("connection", socket => {
                 socket.join(data.course_id + lecture + "hey");
             });
             console.log('The user is a ', socket.user_role);
-            console.log('The user is in room: ', socket.rooms);
+            console.log('The user is in room: ', socket.adapter.rooms);
         }
         // } else {
         //     console.log('The user is a ', socket.user_role);
