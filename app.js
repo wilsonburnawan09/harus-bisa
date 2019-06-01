@@ -52,7 +52,7 @@ io.on("connection", socket => {
             });
             console.log('The user is a ', socket.user_role);
             console.log('The user is in room: ', socket.adapter.rooms);
-        } elseif (socket.user_role === "professor") {
+        } else if (socket.user_role === "professor") {
             // console.log('The user is a ', socket.user_role);
             // console.log('The user is in room: ', socket.rooms);
         }
