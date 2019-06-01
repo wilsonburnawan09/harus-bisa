@@ -14,7 +14,7 @@ var http = require("http");
 var socketIO = require("socket.io");
 var server = http.createServer(app);
 var io = socketIO(server);
-io.origins('*:*');
+io.set('origins', '*:*');
 
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
