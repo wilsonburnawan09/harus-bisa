@@ -42,13 +42,13 @@ const io = require("socket.io")(server, {
 
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
-    socket.on("set_socket_data", (user_id, user_role, course_id, lecture_ids) => {
-        socket.user_id = user_id;
-        socket.user_role = user_role;
-        socket.lecture_ids = lecture_ids;
+    socket.on("set_socket_data", (data) => {
+        socket.user_id = data.user_id;
+        socket.user_role = data.user_role;
+        socket.lecture_ids = data.lecture_ids;
         if (socket.user_role === "student" || socket.user_role === "professor") {
             socket.lecture_ids.forEach(lecture => {
-                socket.join(course_id + lecture + "hey");
+                socket.join(data.course_id + lecture + "hey");
             });
             console.log('The user is a ', socket.user_role);
             console.log('The user is in room: ', socket.rooms);
