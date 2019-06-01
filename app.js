@@ -3,7 +3,7 @@ var cors = require('cors');
 var app = express();
 var db = require('./db');
 
-// app.use(cors());
+app.use(cors());
 // app.all('/', function(req, res, next) {
 //     res.header("Access-Control-Allow-Origin", "*");
 //     res.header("Access-Control-Allow-Headers", "X-Requested-With");
