@@ -11,13 +11,22 @@ app.use(cors());
 // });
 
 var http = require("http");
-var socketIO = require("socket.io");
 var server = http.createServer(app);
-var io = socketIO(server, {origins:'*:*'});
+
+const io = require("socket.io")(server, {
+    handlePreflightRequest: (req, res) => {
+        const headers = {
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
+            "Access-Control-Allow-Credentials": true
+        };
+        res.writeHead(200, headers);
+        res.end();
+    }
+});
 
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
-    //console.log(socket);
   
     // Returning the initial data of food menu from FoodItems collection
     socket.on("lecture_toggle_live", () => {
