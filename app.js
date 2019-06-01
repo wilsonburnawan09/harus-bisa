@@ -54,7 +54,7 @@ io.on("connection", socket => {
                 console.log('The user is in room: ', socket.rooms);
             });
         } else {
-            console.log('The user is a ', socket.role);
+            console.log('The user is a ', socket.user_role);
             console.log('The user is in room: ', socket.rooms);
         }
         socket.emit("saved_credential", { message: "User info is stored."})
