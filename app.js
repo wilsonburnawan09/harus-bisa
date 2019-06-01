@@ -57,8 +57,10 @@ io.on("connection", socket => {
             console.log('The user is a ', socket.user_role);
             console.log('The user is in room: ', socket.rooms);
         }
-        socket.emit("au", { message: "User info is stored."})
+        socket.emit("saved_credential", { message: "User info is stored."})
     });
+
+    socket.emit("au", { message: "User info is stored."})
 
     // socket.on("lecture_live", (role, lecture_id) => {
     //     if (socket.user_role == "professor"){
