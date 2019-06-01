@@ -51,10 +51,7 @@ io.on("connection", socket => {
                 socket.join(data.course_id + lecture);
             });
             console.log('The user is a ', socket.user_role);
-            console.log('The user is in room: ', socket.rooms);
-        } else if (socket.user_role === "professor") {
-            // console.log('The user is a ', socket.user_role);
-            // console.log('The user is in room: ', socket.rooms);
+            console.log('The user is in room: ', socket.adapter.rooms);
         }
         socket.emit("saved_credential", { message: "User info is stored."})
     });
