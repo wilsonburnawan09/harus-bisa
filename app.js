@@ -60,7 +60,9 @@ io.on("connection", socket => {
     //     socket.emit("saved_credential", { message: "User info is stored."})
     // });
 
-    socket.emit("au", "hey");
+    socket.on("au", (msg) => {
+        console.log(msg);
+    });
 
     // socket.on("lecture_live", (role, lecture_id) => {
     //     if (socket.user_role == "professor"){
