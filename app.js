@@ -48,6 +48,7 @@ io.on("connection", socket => {
         socket.lecture_ids = data.lecture_ids;
         if (socket.user_role === "student" || socket.user_role === "professor") {
             socket.lecture_ids.forEach(lecture => {
+                console.log(data.course_id + lecture + "hey")
                 socket.join(data.course_id + lecture + "hey");
             });
             console.log('The user is a ', socket.user_role);
