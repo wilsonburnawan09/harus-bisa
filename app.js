@@ -44,6 +44,7 @@ io.on("connection", socket => {
     console.log("New client connected" + socket.id);
     socket.on("set_socket_data", (data) => {
         console.log('hey')
+        console.log(data);
         socket.user_id = data.user_id;
         socket.user_role = data.user_role;
         socket.lecture_ids = data.lecture_ids;
