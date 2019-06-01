@@ -46,18 +46,16 @@ io.on("connection", socket => {
         socket.user_id = data.user_id;
         socket.user_role = data.user_role;
         socket.lecture_ids = data.lecture_ids;
-        if (socket.user_role === "student" || socket.user_role === "professor") {
+        if (socket.user_role === "student") {
             socket.lecture_ids.forEach(lecture => {
-                console.log(data.course_id + lecture + "hey")
-                socket.join(data.course_id + lecture + "hey");
+                socket.join(data.course_id + lecture);
             });
             console.log('The user is a ', socket.user_role);
             console.log('The user is in room: ', socket.adapter.rooms);
+        } elseif (socket.user_role === "professor") {
+            // console.log('The user is a ', socket.user_role);
+            // console.log('The user is in room: ', socket.rooms);
         }
-        // } else {
-        //     console.log('The user is a ', socket.user_role);
-        //     console.log('The user is in room: ', socket.rooms);
-        // }
         socket.emit("saved_credential", { message: "User info is stored."})
     });
 
