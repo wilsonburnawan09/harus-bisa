@@ -83,7 +83,7 @@ io.on("connection", socket => {
                             socket.to(room).emit("lecture_is_live", false);
                             io.in(room).clients(function(error, clients) {
                                 if (clients.length > 0) {
-                                    console.log('clients in the room: \n');
+                                    console.log('clients in the room: ');
                                     console.log(clients);
                                     clients.forEach(function (socket_id) {
                                     io.sockets.sockets[socket_id].leave(room);
