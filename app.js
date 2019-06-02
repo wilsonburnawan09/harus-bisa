@@ -78,20 +78,21 @@ io.on("connection", socket => {
                         if (live) {
                             socket.join(room, () => { 
                                 socket.to(room).emit("lecture_is_live", true);
+                                console.log('The user is in room: ', Object.keys( io.sockets.adapter.sids[socket.id] ));
                             });
                         } else {
                             socket.to(room).emit("lecture_is_live", false);
-                            io.in(room).clients(function(error, clients) {
+                            io.in(room).clients(async function(error, clients) {
                                 if (clients.length > 0) {
                                     console.log('clients in the room: ');
                                     console.log(clients);
-                                    clients.forEach(function (socket_id) {
+                                    await clients.forEach(function (socket_id) {
                                     io.sockets.sockets[socket_id].leave(room);
                                     });
+                                    console.log('The user is in room: ', Object.keys( io.sockets.adapter.sids[socket.id] ));
                                 }
                             });
                         }
-                        console.log('The user is in room: ', Object.keys( io.sockets.adapter.sids[socket.id] ));
                     });
                 }
             });
