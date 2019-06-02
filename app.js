@@ -63,21 +63,21 @@ io.on("connection", socket => {
         console.log('hey')
         var room = data.course_id + data.lecture_id;
         if (socket.user_role === "professor" && socket.valid_rooms.includes(room)){
-            console.log('inside');
+            var live = null;
             Course.findById(data.course_id, function(err, course){
-                console.log("em")
                 if (course.instructor_id == data.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
                         if ( course.lectures[i].id == data.lecture_id) {
-                            console.log("wow")
                             course.lectures[i].live = !course.lectures[i].live;
+                            live = course.lectures[i].live
                             break;
                         }
                     }
                     course.markModified('lectures');
                     course.save().then( () => {
-                        
-                        if (course.lectures[i].live) {
+                        console.log('hehhh')
+                        console.log(live)
+                        if (live) {
                             socket.join(room, () => { 
                                 socket.to(room).emit("lecture_is_live", true);
                             });
