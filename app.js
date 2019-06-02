@@ -43,6 +43,10 @@ const io = require("socket.io")(server, {
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
     socket.on("set_socket_data", (user_id, user_role, course_id, lecture_ids) => {
+        console.log(user_id);
+        console.log(user_role);
+        console.log(course_id);
+        console.log(lecture_ids);
         socket.user_id = user_id;
         socket.user_role = user_role;
         socket.lecture_ids = lecture_ids;
@@ -50,22 +54,22 @@ io.on("connection", socket => {
             socket.lecture_ids.forEach(lecture => {
                 socket.join(course_id + lecture);
             });
-            console.log('The user is a ', socket.user_role);
-            console.log('The user is in room: ', socket.adapter.rooms);
+            // console.log('The user is a ', socket.user_role);
+            // console.log('The user is in room: ', socket.adapter.rooms);
         }
-        socket.emit("saved_credential", { message: "User info is stored."})
+        // socket.emit("saved_credential", { message: "User info is stored."})
     });
 
-    // socket.on("lecture_live", (role, lecture_id) => {
-    //     if (socket.user_role == "professor"){
-    //         socket.join(room, () => {
+    socket.on("lecture_live", (role, lecture_id) => {
+        if (socket.user_role == "professor"){
+            socket.join(room, () => {
 
-    //             socket.emit("lecture_is_live", true);
-    //         });
-    //     } else {
-    //         socket.emit("lecture_is_live", false);
-    //     }
-    // });
+                socket.emit("lecture_is_live", true);
+            });
+        } else {
+            socket.emit("lecture_is_live", false);
+        }
+    });
 
     // socket.on("lecture_closed", (lecture_id) => {
 
