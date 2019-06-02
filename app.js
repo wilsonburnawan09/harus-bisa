@@ -68,6 +68,7 @@ io.on("connection", socket => {
                 if (course.instructor_id == data.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
                         if ( course.lectures[i].id == req.params.lecture_id) {
+                            console.log("wow")
                             course.lectures[i].live = !course.lectures[i].live;
                             break;
                         }
