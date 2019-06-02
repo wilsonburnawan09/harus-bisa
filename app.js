@@ -75,8 +75,6 @@ io.on("connection", socket => {
                     }
                     course.markModified('lectures');
                     course.save().then( () => {
-                        console.log('hehhh')
-                        console.log(live)
                         if (live) {
                             socket.join(room, () => { 
                                 socket.to(room).emit("lecture_is_live", true);
@@ -100,13 +98,6 @@ io.on("connection", socket => {
         }
     });
 
-    // socket.on("lecture_closed", (data) => {
-    //     var room = data.course_id + data.lecture_id;
-    //     if (socket.user_role === "professor" && socket.valid_rooms.includes(room)){
-    //         // TODO change live field in database to false
-            
-    //     }
-    // });
 
     socket.on("disconnect", () => {
         console.log("user ", socket.user_id, " ", socket.user_role);
