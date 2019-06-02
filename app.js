@@ -65,6 +65,7 @@ io.on("connection", socket => {
         if (socket.user_role === "professor" && socket.valid_rooms.includes(room)){
             console.log('inside');
             Course.findById(data.course_id, function(err, course){
+                console.log("em")
                 if (course.instructor_id == data.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
                         if ( course.lectures[i].id == req.params.lecture_id) {
