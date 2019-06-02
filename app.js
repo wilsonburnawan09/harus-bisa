@@ -50,10 +50,12 @@ io.on("connection", socket => {
             socket.lecture_ids.forEach(lecture => {
                 socket.join(data.course_id + lecture);
             });
-            // console.log('The user is a ', socket.user_role);
-            // console.log('The user is in room: ', socket.adapter.rooms);
+            console.log('The user is a ', socket.user_role);
+            console.log('The user is in room: ', socket.adapter.rooms);
         }
         // socket.emit("saved_credential", { message: "User info is stored."})
+        console.log('The user is a ', socket.user_role);
+        console.log('The user is in room: ', socket.adapter.rooms);
     });
 
     socket.on("lecture_live", (data) => {
