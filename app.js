@@ -71,24 +71,25 @@ io.on("connection", socket => {
                         }
                     }
                     course.markModified('lectures');
-                    course.save().then( () => {  
-                        socket.join(room, () => { 
-                            console.log('The user is in room: ', Object.keys( io.sockets.adapter.sids[socket.id] ));
-                            if (course.lectures[i].live) {
+                    course.save().then( () => {
+                        
+                        if (course.lectures[i].live) {
+                            socket.join(room, () => { 
                                 socket.to(room).emit("lecture_is_live", true);
-                            } else {
-                                socket.to(room).emit("lecture_is_live", false);
-                                io.in(room).clients(function(error, clients) {
-                                    if (clients.length > 0) {
-                                        console.log('clients in the room: \n');
-                                        console.log(clients);
-                                        clients.forEach(function (socket_id) {
-                                        io.sockets.sockets[socket_id].leave(room);
-                                        });
-                                    }
-                                });
-                            }
-                        });
+                            });
+                        } else {
+                            socket.to(room).emit("lecture_is_live", false);
+                            io.in(room).clients(function(error, clients) {
+                                if (clients.length > 0) {
+                                    console.log('clients in the room: \n');
+                                    console.log(clients);
+                                    clients.forEach(function (socket_id) {
+                                    io.sockets.sockets[socket_id].leave(room);
+                                    });
+                                }
+                            });
+                        }
+                        console.log('The user is in room: ', Object.keys( io.sockets.adapter.sids[socket.id] ));
                     });
                 }
             });
