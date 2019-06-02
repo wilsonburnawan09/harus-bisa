@@ -2,6 +2,7 @@ var express = require('express');
 var cors = require('cors');
 var app = express();
 var db = require('./db');
+var Course = require('./model/Course');
 
 app.use(cors());
 // app.all('/', function(req, res, next) {
@@ -45,34 +46,65 @@ io.on("connection", socket => {
     socket.on("set_socket_data", (data) => {
         socket.user_id = data.user_id;
         socket.user_role = data.user_role;
-        socket.lecture_ids = data.lecture_ids;
-        if (socket.user_role === "student") {
-            socket.lecture_ids.forEach(lecture => {
-                socket.join(data.course_id + lecture);
-            });
-            console.log('The user is a ', socket.user_role);
-            console.log('The user is in room: ', socket.adapter.rooms);
-        }
-        // socket.emit("saved_credential", { message: "User info is stored."})
+        socket.valid_rooms = [];
+        // socket.lecture_ids = data.lecture_ids;
+        data.lecture_ids.forEach(lecture => {
+            var room = data.course_id + lecture;
+            socket.valid_rooms.push(room);
+            if (socket.user_role === "student") {
+                socket.join(room);
+            }
+        });
         console.log('The user is a ', socket.user_role);
-        console.log('The user is in room: ', socket.adapter.rooms);
+        console.log('The user is in room: ', Object.keys( io.sockets.adapter.sids[socket.id] ));
     });
 
-    socket.on("lecture_live", (data) => {
-        if (socket.user_role === "professor"){
-            var room = data.course_id + data.lecture_id;
-            socket.join(room, () => {
-                socket.to(room).emit("lecture_is_live");
+    socket.on("toggle_lecture_live", (data) => {
+        var room = data.course_id + data.lecture_id;
+        if (socket.user_role === "professor" && socket.valid_rooms.includes(room)){
+            Course.findById(data.course_id, function(err, course){
+                if (course.instructor_id == data.user_id) {
+                    for(var i=0; i<course.lectures.length; i++){
+                        if ( course.lectures[i].id == req.params.lecture_id) {
+                            course.lectures[i].live = !course.lectures[i].live;
+                            break;
+                        }
+                    }
+                    course.markModified('lectures');
+                    course.save().then( () => {  
+                        socket.join(room, () => { 
+                            console.log('The user is in room: ', Object.keys( io.sockets.adapter.sids[socket.id] ));
+                            if (course.lectures[i].live) {
+                                socket.to(room).emit("lecture_is_live", true);
+                            } else {
+                                socket.to(room).emit("lecture_is_live", false);
+                                io.in(room).clients(function(error, clients) {
+                                    if (clients.length > 0) {
+                                        console.log('clients in the room: \n');
+                                        console.log(clients);
+                                        clients.forEach(function (socket_id) {
+                                        io.sockets.sockets[socket_id].leave(room);
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    });
+                }
             });
         }
     });
 
-    socket.on("lecture_closed", (lecture_id) => {
-
-    });
+    // socket.on("lecture_closed", (data) => {
+    //     var room = data.course_id + data.lecture_id;
+    //     if (socket.user_role === "professor" && socket.valid_rooms.includes(room)){
+    //         // TODO change live field in database to false
+            
+    //     }
+    // });
 
     socket.on("disconnect", () => {
-        console.log("user ", socket.user_id, " ", socket.role);
+        console.log("user ", socket.user_id, " ", socket.user_role);
     });
 });
 
