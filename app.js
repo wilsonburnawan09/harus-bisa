@@ -60,6 +60,7 @@ io.on("connection", socket => {
     });
 
     socket.on("toggle_lecture_live", (data) => {
+        console.log('hey')
         var room = data.course_id + data.lecture_id;
         if (socket.user_role === "professor" && socket.valid_rooms.includes(room)){
             Course.findById(data.course_id, function(err, course){
