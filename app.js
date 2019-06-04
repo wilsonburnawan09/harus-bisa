@@ -81,10 +81,6 @@ io.on("connection", socket => {
                     }
                     course.markModified('lectures');
                     course.save().then( () => {
-                        // lecture_id
-                        // lecture_date
-                        // true/false
-                        console.log(course);
                         data = {
                             live,
                             date,
