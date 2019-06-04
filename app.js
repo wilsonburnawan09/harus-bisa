@@ -52,10 +52,25 @@ io.on("connection", socket => {
             socket.valid_rooms.push(room);
             if (socket.user_role === "student") {
                 socket.join(room);
-            } else if (socket.user_role === "professor") {
-                socket.live_lectures = new Set();
             }
         });
+        if (socket.user_role === "professor") {
+            socket.live_lectures = new Set();
+        } else if (socket.user_role === "student") {
+            Course.findById(data.course_id, function(err, course){
+                for(var i=0; i<course.lectures.length; i++){
+                    if ( course.lectures[i].live == true) {
+                        data = {
+                            live: course.lectures[i].live,
+                            date: course.lectures[i].date,
+                            lecture_id: course.lectures[i].id
+                        }
+                        socket.emit("lecture_is_live", data);
+                        break;
+                    }
+                }
+            });
+        }
     });
 
     socket.on("get_info", ()=> {
