@@ -109,6 +109,8 @@ io.on("connection", socket => {
         var room = data.course_id + "-" + data.lecture_id;
         if (socket.valid_rooms.includes(room)) {
             io.in(room).emit("new_student_join");
+            console.log("fired");
+            console.log(room);
         }
         // TODO: save to database
     });
