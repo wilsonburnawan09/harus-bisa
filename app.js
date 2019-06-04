@@ -57,6 +57,7 @@ io.on("connection", socket => {
             }
         });
     });
+
     socket.on("get_info", ()=> {
         console.log('The user id is: ', socket.user_id);
         console.log('The user role is: ', socket.user_role);
@@ -89,7 +90,6 @@ io.on("connection", socket => {
                         if (live) {
                             socket.join(room, () => { 
                                 socket.to(room).emit("lecture_is_live", data);
-                                // console.log('The user is in room: ', Object.keys( io.sockets.adapter.sids[socket.id] ));
                                 socket.live_lectures.add(room);
                             });
                         } else if(!live) {
@@ -101,13 +101,42 @@ io.on("connection", socket => {
                     });
                 }
             });
+
         }
     });
 
     socket.on("participate_lecture", (data) => {
         var room = data.course_id + "-" + data.lecture_id;
+        if (socket.valid_rooms.includes(room)) {
+            io.in(room).emit("new_student_join");
+        }
+        // TODO: save to database
     });
 
+    socket.on("start_question", (data) => {
+        if (socket.user_role === "professor"){
+            var room = data.course_id + "-" + data.lecture_id;
+            var course_id = data.course_id;
+            var lecture_id = data.lecture_id;
+            var quiz_index = data.quiz_index;
+            var quizzes = null;
+            if (Object.keys( io.sockets.adapter.sids[socket.id] ).includes(room)) {
+                Course.findById(course_id, function(err, course){
+                    if (course.instructor_id == socket.user_id) {
+                        for(var i=0; i<course.lectures.length; i++){
+                            if ( course.lectures[i].id == lecture_id) {
+                                quizzes = course.lectures[i].quizzes;
+                                break;
+                            }
+                        }
+                        var quiz = quizzes[quiz_index];
+                        quiz.no = quiz_index;
+                        socket.to(room).emit("new_question", quiz);
+                    }
+                });
+            }
+        }
+    });
 
     socket.on("disconnect", () => {
         console.log("user ", socket.user_id, " ", socket.user_role);
