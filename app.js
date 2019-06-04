@@ -122,10 +122,8 @@ io.on("connection", socket => {
                         break;
                     }
                 }
-                var course_id = cleaned_room.slice(0,i);
-                var lecture_id = cleaned_room.slice(i+1);
-                // console.log(course_id);
-                // console.log(lecture_id);
+                var course_id = cleaned_room.slice(0,split_pos);
+                var lecture_id = cleaned_room.slice(split_pos+1);
                 var live = false;
                 var date = null;
                 Course.findById(course_id, function(err, course){
