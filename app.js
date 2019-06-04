@@ -67,26 +67,38 @@ io.on("connection", socket => {
         var room = data.course_id + "-" + data.lecture_id;
         if (socket.user_role === "professor" && socket.valid_rooms.includes(room)){
             var live = null;
+            var date = null;
+            var lecture_id = data.lecture_id;
             Course.findById(data.course_id, function(err, course){
                 if (course.instructor_id == socket.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
                         if ( course.lectures[i].id == data.lecture_id) {
                             course.lectures[i].live = !course.lectures[i].live;
                             live = course.lectures[i].live;
+                            date = course.lectures[i].date;
                             break;
                         }
                     }
                     course.markModified('lectures');
                     course.save().then( () => {
+                        // lecture_id
+                        // lecture_date
+                        // true/false
+                        console.log(course);
+                        data = {
+                            live,
+                            date,
+                            lecture_id
+                        }
                         if (live) {
                             socket.join(room, () => { 
-                                socket.to(room).emit("lecture_is_live", true);
+                                socket.to(room).emit("lecture_is_live", data);
                                 // console.log('The user is in room: ', Object.keys( io.sockets.adapter.sids[socket.id] ));
                                 socket.live_lectures.add(room);
                             });
                         } else if(!live) {
                             socket.leave(room, () => {
-                                socket.to(room).emit("lecture_is_live", false);
+                                socket.to(room).emit("lecture_is_live", data);
                                 socket.live_lectures.delete(room);
                             });
                         }
@@ -118,17 +130,25 @@ io.on("connection", socket => {
                 var lecture_id = cleaned_room.slice(i+1);
                 // console.log(course_id);
                 // console.log(lecture_id);
+                var live = false;
+                var date = null;
                 Course.findById(course_id, function(err, course){
                     if (course.instructor_id == socket.user_id) {
                         for(var i=0; i<course.lectures.length; i++){
                             if ( course.lectures[i].id == lecture_id) {
                                 course.lectures[i].live = false;
+                                date = course.lectures[i].date;
                                 break;
                             }
                         }
                         course.markModified('lectures');
                         course.save().then( () => {
-                            socket.to(room[0]).emit("lecture_is_live", false);
+                            data = {
+                                live,
+                                date,
+                                lecture_id
+                            }
+                            socket.to(room[0]).emit("lecture_is_live", data);
                         });
                     }
                 });
