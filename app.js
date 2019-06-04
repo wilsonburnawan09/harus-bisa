@@ -4,6 +4,9 @@ var app = express();
 var db = require('./db');
 var Course = require('./model/Course');
 
+
+var global = 9;
+
 app.use(cors());
 // app.all('/', function(req, res, next) {
 //     res.header("Access-Control-Allow-Origin", "*");
@@ -123,9 +126,7 @@ io.on("connection", socket => {
     socket.on("participate_lecture", (data) => {
         var room = data.course_id + "-" + data.lecture_id;
         if (socket.valid_rooms.includes(room)) {
-            io.in(room).emit("new_student_join", socket.user_id, () => {
-                console.log('boom')
-            });
+            io.in(room).emit("new_student_join", global++);
             console.log("fired");
             console.log(room);
         }
