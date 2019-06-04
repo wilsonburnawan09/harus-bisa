@@ -128,8 +128,7 @@ io.on("connection", socket => {
                         }
                         course.markModified('lectures');
                         course.save().then( () => {
-                            console.log('emit?')
-                            io.in(room).emit("lecture_is_live", false);
+                            socket.to(room[0]).emit("lecture_is_live", false);
                         });
                     }
                 });
