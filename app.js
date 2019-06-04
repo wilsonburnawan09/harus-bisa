@@ -141,7 +141,7 @@ io.on("connection", socket => {
     });
 
     socket.on("disconnect", () => {
-        console.log("user ", socket.user_id, " ", socket.user_role);
+        console.log("user ", socket.user_id, " ", socket.user_role, " is disconnected");
         if (socket.user_role === "professor") {
             var connected_lectures = socket.live_lectures.entries();
             for (var room of connected_lectures){
