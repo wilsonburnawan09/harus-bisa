@@ -174,7 +174,8 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             point = Number(req.body.point);
         }
 
-        var quiz_id = await Counter.findByIdAndUpdate("quiz_id", {$inc: {value: 1}}, {new: true}).then( (id) => { return id; });
+        var quiz_id_object = await Counter.findByIdAndUpdate("quiz_id", {$inc: {value: 1}}, {new: true}).then( (id) => { return id; });
+        var quiz_id = quiz_id_object.value;
         console.log(quiz_id);
 
         var quiz = {
