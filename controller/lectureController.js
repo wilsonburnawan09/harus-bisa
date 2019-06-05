@@ -36,6 +36,7 @@ router.post('/', verifyToken, function(req, res, next){
             id: counter.value,
             date: date,
             description: description,
+            has_lived: false,
             live: false,
             participation_reward_percentage: participation_reward_percentage,
             quizzes: []
@@ -176,7 +177,6 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
 
         var quiz_id_object = await Counter.findByIdAndUpdate("quiz_id", {$inc: {value: 1}}, {new: true}).then( (id) => { return id; });
         var quiz_id = quiz_id_object.value;
-        console.log(quiz_id);
 
         var quiz = {
             id: quiz_id,
