@@ -127,7 +127,7 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
 router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
     if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
 
-    Course.findById(req.params.course_id, function(err, course){
+    Course.findById(req.params.course_id, async function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
         if (!course) return res.status(404).send({ message: "Course not found.", data: null});
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
@@ -174,7 +174,11 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             point = Number(req.body.point);
         }
 
+        var quiz_id = await Counter.findByIdAndUpdate("join_code", {$inc: {value: 1}}, {new: true}).then( (id) => { return id; });
+        console.log(quiz_id);
+
         var quiz = {
+            id: quiz_id,
             question: question,
             answers: answers,
             correct_answer: correct_answer,
