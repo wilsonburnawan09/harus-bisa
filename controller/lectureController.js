@@ -69,7 +69,7 @@ router.get('/', verifyToken, function(req,res,next){
             delete projected_course.course_gradebook;
             if (req.role == "student") {
                 var has_lived_lectures = [];
-                lectures.forEach(lecture => {
+                projected_course.lectures.forEach(lecture => {
                     if (lecture.has_lived) {
                         has_lived_lectures.push(lecture);
                     }
