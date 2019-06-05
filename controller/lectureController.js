@@ -67,6 +67,15 @@ router.get('/', verifyToken, function(req,res,next){
         if (course.course_gradebook.has(req.userId)){
             var projected_course = Object.assign({}, course)._doc;
             delete projected_course.course_gradebook;
+            if (req.role == "student") {
+                var has_lived_lectures = [];
+                lectures.forEach(lecture => {
+                    if (lecture.has_lived) {
+                        has_lived_lectures.push(lecture);
+                    }
+                })
+                projected_course.lectures = has_lived_lectures;
+            }
             res.status(200).send({ message: "Get lectures is successful.", data: projected_course });
         } else {
             res.status(401).send({message: "User is not in this course.", data: null });

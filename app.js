@@ -89,6 +89,9 @@ io.on("connection", socket => {
                 if (course.instructor_id == socket.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
                         if ( course.lectures[i].id == data.lecture_id) {
+                            if (!course.lectures[i].has_lived) {
+                                course.lectures[i].has_lived = true;
+                            }
                             course.lectures[i].live = !course.lectures[i].live;
                             live = course.lectures[i].live;
                             date = course.lectures[i].date;
