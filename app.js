@@ -123,7 +123,10 @@ io.on("connection", socket => {
     socket.on("participate_lecture", (data) => {
         var room = data.course_id + "-" + data.lecture_id;
         if (socket.valid_rooms.includes(room)) {
-            io.in(room).emit("new_student_join");
+            data = {
+                user_id: socket.user_id
+            }
+            io.in(room).emit("new_student_join", data);
             console.log("fired");
             console.log(room);
         }
