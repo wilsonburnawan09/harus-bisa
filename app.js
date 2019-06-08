@@ -43,12 +43,13 @@ const io = require("socket.io")(server, {
 
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
-    socket.on("set_socket_data", (data) => {
+    socket.on("set_socket_data", async (data) => {
         socket.user_id = data.user_id;
         socket.user_role = data.user_role;
         socket.valid_rooms = [];
-        data.lecture_ids.forEach(lecture => {
-            var room = data.course_id + "-" + lecture;
+        var course = await Course.findById(data.course_id);
+        course.lectures.forEach(lecture => {
+            var room = data.course_id + "-" + lecture.id;
             socket.valid_rooms.push(room);
             if (socket.user_role === "student") {
                 socket.join(room);
@@ -57,7 +58,6 @@ io.on("connection", socket => {
         if (socket.user_role === "professor") {
             socket.live_lectures = new Set();
         } else if (socket.user_role === "student") {
-            Course.findById(data.course_id, function(err, course){
                 for(var i=0; i<course.lectures.length; i++){
                     if ( course.lectures[i].live == true) {
                         data = {
@@ -69,7 +69,6 @@ io.on("connection", socket => {
                         break;
                     }
                 }
-            });
         }
     });
 

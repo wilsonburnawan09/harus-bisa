@@ -72,6 +72,8 @@ router.get('/', verifyToken, function(req,res,next){
                 projected_course.lectures.forEach(lecture => {
                     if (lecture.has_lived) {
                         has_lived_lectures.push(lecture);
+                    } else {
+                        has_lived_lectures.push({id: lecture.id})
                     }
                 })
                 projected_course.lectures = has_lived_lectures;
