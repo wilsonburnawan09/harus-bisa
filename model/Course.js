@@ -13,7 +13,8 @@ var courseSchema = new mongoose.Schema({
     // userid : {\
     //   role: String,
     //   overall: Number,
-    //   lectures_grade: [{date: Date, grade: Number}],
+    //   lectures_grade: {id: {date: Date, grade: Number}.
+    //                    id: {data: Date, grade: Number}},
     // }
     lectures: []
 

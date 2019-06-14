@@ -28,7 +28,6 @@ var server = http.createServer(app);
 
 const io = require("socket.io")(server, {
     handlePreflightRequest: (req, res) => {
-        console.log('hello');
         const headers = {
             "Access-Control-Allow-Headers": "Content-Type, Authorization",
             "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
@@ -61,14 +60,14 @@ io.on("connection", socket => {
                 for(var i=0; i<course.lectures.length; i++){
                     if ( course.lectures[i].live == true) {
                         data = {
-                            live: course.lectures[i].live,
+                            live: courase.lectures[i].live,
                             date: course.lectures[i].date,
                             lecture_id: course.lectures[i].id
                         }
                         socket.emit("lecture_is_live", data);
                         break;
                     }
-                }
+                } 
         }
     });
 
@@ -97,7 +96,18 @@ io.on("connection", socket => {
                             break;
                         }
                     }
+
+                    course.course_gradebook.forEach((value, user_id) => {
+                        if(value.role != "professor"){
+                            var lecture_grade = {
+                                present: false,
+                                quiz_answers: {}
+                            }
+                            course.course_gradebook.get(user_id).lectures_grade[data.lecture_id] = lecture_grade;
+                        }
+                    })
                     course.markModified('lectures');
+                    course.markModified('course_gradebook');
                     course.save().then( () => {
                         data = {
                             live,
@@ -129,8 +139,6 @@ io.on("connection", socket => {
                 user_id: socket.user_id
             }
             io.in(room).emit("new_student_join", data);
-            console.log("fired");
-            console.log(room);
         }
         // TODO: save to database
     });
