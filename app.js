@@ -195,7 +195,6 @@ io.on("connection", socket => {
 
 
     socket.on("start_question", (data) => {
-        connsole.log('masuk');
         if (socket.user_role === "professor"){
             var active_room = data.course_id + "+" + data.lecture_id;
             var course_id = data.course_id;
@@ -203,6 +202,7 @@ io.on("connection", socket => {
             var quiz_index = data.quiz_index;
             var quizzes = null;
             if (socket.live_lectures.has(active_room)) {
+                console.log(socket.live_lectures);
                 Course.findById(course_id, function(err, course){
                     if (course.instructor_id == socket.user_id) {
                         for(var i=0; i<course.lectures.length; i++){
