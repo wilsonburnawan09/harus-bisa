@@ -221,8 +221,11 @@ io.on("connection", socket => {
                             id: quizzes[quiz_index].id,
                             quiz_index: quiz_index, 
                             live: true,
-                            answer_showned: false,
+                            answer_shown: false,
                             time_duration: quizzes[quiz_index].time_duration,
+                            answers: quizzes[quiz_index].answers,
+                            correct_answer: undefined,
+                            student_answer: undefined
                         }
                         socket.to(active_room).emit("new_question", quiz);
                     }
@@ -238,7 +241,8 @@ io.on("connection", socket => {
                 course_id: data.course_id,
                 lecture_id: data.lecture_id,
                 quiz_index: data.quiz_index,
-                time_change: data.time_change,
+                new_duration: data.new_duration,
+                student_answer: undefined,
             }
             var course = await Course.findById(data.course_id);
             if (course.instructor_id == socket.user_id) {
@@ -279,8 +283,11 @@ io.on("connection", socket => {
                             id: quizzes[data.quiz_index].id,
                             quiz_index: data.quiz_index, 
                             live: false,
-                            answer_showned: false,
+                            answer_shown: false,
                             time_duration: quizzes[data.quiz_index].time_duration,
+                            answers: quizzes[data.quiz_index].answers,
+                            student_answer: undefined,
+                            correct_answer: null,
                         }
                         socket.to(active_room).emit("question_closed", closed_question);
                         break;
