@@ -201,7 +201,7 @@ io.on("connection", socket => {
             var lecture_id = data.lecture_id;
             var quiz_index = data.quiz_index;
             var quizzes = null;
-            console.log(live_lectures);
+            console.log(socket.live_lectures);
             if (socket.live_lectures.has(active_room)) {
                 console.log(socket.live_lectures);
                 Course.findById(course_id, function(err, course){
