@@ -232,7 +232,7 @@ io.on("connection", socket => {
                             time_duration: quizzes[quiz_index].time_duration,
                             answers: quizzes[quiz_index].answers,
                             correct_answer: undefined,
-                            student_answer: undefined
+                            student_answer: null
                         }
                         socket.to(active_room).emit("new_question", quiz);
                     }
@@ -244,32 +244,44 @@ io.on("connection", socket => {
     socket.on("change_quiz_time", async (data) => {
         var active_room = data.course_id + "+" + data.lecture_id;
         if (socket.user_role == "professor" && socket.live_lectures.has(active_room)) {
-            var quiz = {
-                course_id: data.course_id,
-                lecture_id: data.lecture_id,
-                quiz_index: data.quiz_index,
-                new_duration: data.new_duration,
-                student_answer: undefined,
-            }
-            
             var course = await Course.findById(data.course_id);
             if (course.instructor_id == socket.user_id) {
-                socket.to(active_room).emit("time_change", quiz);
-                var lecture_index = null;
                 for(var i=0; i<course.lectures.length; i++){
                     if ( course.lectures[i].id == data.lecture_id) {
-                        lecture_index = i;
+                        var quizzes = course.lectures[i].quizzes;
+                        var quiz_index = 0;
+                        for (var j=0; j<quizzes.length; j++) {
+                            if (quizzes[j].id == quiz_id) {
+                                quiz_index = j;
+                                break;
+                            }
+                        }
+                        course.lectures[i].quizzes[quiz_index].time_duration = data.new_duration;
+
+                        var quiz = {
+                            question: quizzes[quiz_index].question,
+                            id: quizzes[quiz_index].id,
+                            quiz_index: quiz_index, 
+                            live: true,
+                            answer_shown: false,
+                            time_duration: data.time_duration,
+                            answers: quizzes[quiz_index].answers,
+                            student_answer: undefined,
+                            correct_answer: null,
+                        }
+
+                        if (data.new_duration > 0) {
+                            socket.to(active_room).emit("time_change", quiz);
+                        } else {
+                            quiz.live = false;
+                            socket.to(active_room).emit("question_closed", quiz);
+                        }
+                        
+                        course.markModified('lectures');
+                        course.save();  
                         break;
                     }
-                }
-                // var cur_duration = course.lectures[lecture_index].quizzes[data.quiz_index].time_duration;
-                // var new_duration;
-                if ((data.new_duration) <= 0) {
-                    socket.to(active_room).emit("question_closed", quiz);
-                } 
-                course.lectures[lecture_index].quizzes[data.quiz_index].time_duration = data.new_duration;
-                course.markModified('lectures');
-                course.save();            
+                }          
             } 
         }
     });
