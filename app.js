@@ -257,15 +257,21 @@ io.on("connection", socket => {
                                 break;
                             }
                         }
-                        course.lectures[i].quizzes[quiz_index].time_duration = data.new_duration;
 
+                        var new_dur = data.new_duration;
+                        if (data.new_duration < 0) {
+                            new_dur = 0;
+                        }
+
+                        course.lectures[i].quizzes[quiz_index].time_duration = new_dur;
+                        
                         var quiz = {
                             question: quizzes[quiz_index].question,
                             id: quizzes[quiz_index].id,
                             quiz_index: quiz_index, 
                             live: true,
                             answer_shown: false,
-                            time_duration: data.new_duration,
+                            time_duration: new_dur,
                             answers: quizzes[quiz_index].answers,
                             student_answer: undefined,
                             correct_answer: null,
