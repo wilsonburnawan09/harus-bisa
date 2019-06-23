@@ -265,7 +265,7 @@ io.on("connection", socket => {
                             quiz_index: quiz_index, 
                             live: true,
                             answer_shown: false,
-                            time_duration: data.time_duration,
+                            time_duration: data.new_duration,
                             answers: quizzes[quiz_index].answers,
                             student_answer: undefined,
                             correct_answer: null,
