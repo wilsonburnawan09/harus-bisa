@@ -159,14 +159,15 @@ io.on("connection", socket => {
                 socket.join(active_room);
                 socket.live_lectures.add(active_room);
                 socket.to(active_room).emit("new_student_join", data);
-                // TODO: save to database
                 var course = await Course.findById(data.course_id);
-                // console.log(course.course_gradebook.get(socket.user_id));
-                // console.log(course.course_gradebook.get(socket.user_id).lecture_grades);
-                
-                // console.log(course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present);
-
-
+                if (course.course_gradebook.has(socket.user_id)) {
+                    course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present = true;
+                    course.markModified('course_gradebook');
+                    course.save();
+                } else {
+                    socket.leave(active_room);
+                    socket.live_lectures.delete(active_room);
+                }
             }
         }
     });
@@ -202,9 +203,7 @@ io.on("connection", socket => {
             var quiz_index = data.quiz_index;
             var quizzes = null;
             if (socket.live_lectures.has(active_room)) {
-                console.log(socket.live_lectures);
                 Course.findById(course_id, function(err, course){
-                    console.log(socket.user_id);
                     if (course.instructor_id == socket.user_id) {
                         for(var i=0; i<course.lectures.length; i++){
                             if ( course.lectures[i].id == lecture_id) {
@@ -214,7 +213,6 @@ io.on("connection", socket => {
                         }
                         var quiz = quizzes[quiz_index];
                         quiz.no = quiz_index;
-                        console.log("send");
                         socket.to(active_room).emit("new_question", quiz);
                     }
                 });
@@ -263,6 +261,7 @@ io.on("connection", socket => {
                 course_id: data.course_id,
                 lecture_id: data.lecture_id,
                 quiz_index: data.quiz_index,
+                // TODO: give correct answer
             }
             if (course.instructor_id == socket.user_id) {
                 socket.to(active_room).emit("question_closed", closed_question);
