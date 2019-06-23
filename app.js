@@ -275,12 +275,12 @@ io.on("connection", socket => {
                         course.lectures[i].quizzes[data.quiz_index].time_duration = 0;
                         var quizzes = course.lectures[i].quizzes;
                         var closed_question = {
-                            question: quizzes[quiz_index].question,
-                            id: quizzes[quiz_index].id,
+                            question: quizzes[data.quiz_index].question,
+                            id: quizzes[data.quiz_index].id,
                             quiz_index: data.quiz_index, 
                             live: false,
                             answer_showned: false,
-                            time_duration: quizzes[quiz_index].time_duration,
+                            time_duration: quizzes[data.quiz_index].time_duration,
                         }
                         socket.to(active_room).emit("question_closed", closed_question);
                         break;
