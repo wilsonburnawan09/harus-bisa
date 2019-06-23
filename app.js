@@ -195,6 +195,7 @@ io.on("connection", socket => {
 
 
     socket.on("start_question", (data) => {
+        connsole.log('masuk');
         if (socket.user_role === "professor"){
             var active_room = data.course_id + "+" + data.lecture_id;
             var course_id = data.course_id;
