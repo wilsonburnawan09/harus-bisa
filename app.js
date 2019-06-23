@@ -243,6 +243,7 @@ io.on("connection", socket => {
 
     socket.on("change_quiz_time", async (data) => {
         var active_room = data.course_id + "+" + data.lecture_id;
+        var quiz_id = data.quiz_id;
         if (socket.user_role == "professor" && socket.live_lectures.has(active_room)) {
             var course = await Course.findById(data.course_id);
             if (course.instructor_id == socket.user_id) {
