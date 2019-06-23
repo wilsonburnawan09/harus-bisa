@@ -140,7 +140,6 @@ io.on("connection", socket => {
                     });
                 }
             });
-
         }
     });
 
@@ -163,11 +162,27 @@ io.on("connection", socket => {
     });
 
     // student emit(answer)
-    socket.on("student_answer", (data) => {
-        console.log(data.course_id);
-        console.log(lecture_id);
-        console.log(number)
+    socket.on("answer_question", (data) => {
+        var active_room = data.course_id + "+" + data.lecture_id;
+        if (socket.user_role === "student") {
+            console.log(socket.user_id);
+            console.log(data.course_id);
+            console.log(data.lecture_id);
+            console.log(data.question_number);
+            console.log(data.answer);
+            dat = {
+                [data.course_id]: {
+                    [socket.user_id]: {
+                        [data.lecture_id]: {
+                            [data.question_number]: data.answer
+                        }
+                    }
+                }
+            }
+            socket.to(active_room).emit("new_answer", dat);
+        }
     });
+
 
     socket.on("start_question", (data) => {
         if (socket.user_role === "professor"){
@@ -194,20 +209,64 @@ io.on("connection", socket => {
         }
     });
 
-    // socket.on("add_quiz_time", (data) => {
-    //     var room = data.course_id + "-" + data.lecture_id;
-    //     var current_rooms = Object.keys(socket.rooms);
-    //     // console.log('The user is in room: ', Object.keys(socket.rooms));
-    //     if (socket.user_role == "professor" && current_rooms.includes(room)) {
-    //         console.log("authorized");
-    //     } else {
-    //         console.log("nope");
-    //     }
-    //     var time = {
-    //         additional_time: data.additional_time,
-    //     }
-    //     socket.to(room).emit("time_added", time);
-    // });
+    socket.on("change_quiz_time", async (data) => {
+        var active_room = data.course_id + "+" + data.lecture_id;
+        if (socket.user_role == "professor" && socket.live_lectures.has(active_room)) {
+            var time = {
+                course_id: data.course_id,
+                lecture_id: data.lecture_id,
+                quiz_index: data.quiz_index,
+                time_change: data.time_change,
+            }
+            var course = await Course.findById(data.course_id);
+            if (course.instructor_id == socket.user_id) {
+                socket.to(active_room).emit("time_added", time);
+                var lecture_index = null;
+                for(var i=0; i<course.lectures.length; i++){
+                    if ( course.lectures[i].id == data.lecture_id) {
+                        lecture_index = i;
+                        break;
+                    }
+                }
+                var cur_duration = course.lectures[lecture_index].quizzes[data.quiz_index].time_duration;
+                var new_duration;
+                if ((cur_duration + data.time_change) < 0) {
+                    new_duration = 0;
+                } else {
+                    new_duration = cur_duration + data.time_change;
+                }
+                course.lectures[lecture_index].quizzes[data.quiz_index].time_duration = new_duration;
+                course.markModified('lectures');
+                course.save();            
+            } 
+        }
+    });
+
+    socket.on("close_question", async (data) => {
+        var active_room = data.course_id + "+" + data.lecture_id;
+        if (socket.user_role == "professor" && socket.live_lectures.has(active_room)) {
+            var course = await Course.findById(data.course_id);
+            var closed_question = {
+                course_id: data.course_id,
+                lecture_id: data.lecture_id,
+                quiz_index: data.quiz_index,
+            }
+            console.log('hm')
+            if (course.instructor_id == socket.user_id) {
+                socket.to(active_room).emit("question_closed", closed_question);
+                for(var i=0; i<course.lectures.length; i++){
+                    if ( course.lectures[i].id == data.lecture_id) {
+                        course.lectures[i].quizzes[data.quiz_index].time_duration = 0;
+                        break;
+                    }
+                }
+                console.log('yey')
+                // TODO: edit gradebook
+                course.markModified('lectures');
+                course.save();            
+            } 
+        }
+    });
 
     socket.on("disconnect", async () => {
         console.log("user ", socket.user_id, " ", socket.user_role, " is disconnected");
@@ -242,30 +301,7 @@ io.on("connection", socket => {
                         }
                         socket.to(room[0]).emit("lecture_is_live", data);
                     });
-
                 } 
-
-
-                // Course.findById(course_id, function(err, course){
-                //     if (course.instructor_id == socket.user_id) {
-                //         for(var i=0; i<course.lectures.length; i++){
-                //             if ( course.lectures[i].id == lecture_id) {
-                //                 course.lectures[i].live = false;
-                //                 date = course.lectures[i].date;
-                //                 break;
-                //             }
-                //         }
-                //         course.markModified('lectures');
-                //         course.update().then( () => {
-                //             data = {
-                //                 live,
-                //                 date,
-                //                 lecture_id
-                //             }
-                //             socket.to(room[0]).emit("lecture_is_live", data);
-                //         });
-                //     }
-                // });
             }
             
         }
