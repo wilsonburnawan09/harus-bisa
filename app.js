@@ -85,6 +85,8 @@ io.on("connection", socket => {
         console.log('The user is in room: ', Object.keys(socket.rooms));
         console.log('The user valid rooms are: ', socket.valid_rooms);
         console.log('The user live lectures are: ', socket.live_lectures);
+        // console.log(socket.id in io.sockets.adapter.rooms);
+        // console.log('a' in io.sockets.adapter.rooms);
     })
 
     socket.on("toggle_lecture_live", (data) => {
@@ -114,7 +116,7 @@ io.on("connection", socket => {
                                     present: false,
                                     quiz_answers: {}
                                 }
-                                course.course_gradebook.get(user_id).lectures_grade[data.lecture_id] = lecture_grade;
+                                course.course_gradebook.get(user_id).lecture_grades[data.lecture_id] = lecture_grade;
                             }
                         });
                     }
@@ -144,21 +146,29 @@ io.on("connection", socket => {
     });
 
     // TODO leave lecture
-    socket.on("participate_lecture", (data) => {
+    socket.on("participate_lecture", async (data) => {
         if (socket.user_role === "student") {
             var nonactive_room = data.course_id + "-" + data.lecture_id;
             var active_room = data.course_id + "+" + data.lecture_id;
-            if (socket.valid_rooms.has(nonactive_room) && !(active_room in socket.rooms)) {
-
+            if (socket.valid_rooms.has(nonactive_room) && (active_room in io.sockets.adapter.rooms)) {
                 data = {
-                    user_id: socket.user_id
+                    user_id: socket.user_id,
+                    course_id: data.course_id,
+                    lecture_id: data.lecture_id
                 }
                 socket.join(active_room);
                 socket.live_lectures.add(active_room);
                 socket.to(active_room).emit("new_student_join", data);
+                // TODO: save to database
+                var course = await Course.findById(data.course_id);
+                console.log(course.course_gradebook.get(socket.user_id));
+                console.log(course.course_gradebook.get(socket.user_id).lecture_grades);
+                
+                // console.log(course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present);
+
+
             }
         }
-        // TODO: save to database (check if lecture is live)
     });
 
     // student emit(answer)
@@ -251,7 +261,6 @@ io.on("connection", socket => {
                 lecture_id: data.lecture_id,
                 quiz_index: data.quiz_index,
             }
-            console.log('hm')
             if (course.instructor_id == socket.user_id) {
                 socket.to(active_room).emit("question_closed", closed_question);
                 for(var i=0; i<course.lectures.length; i++){
@@ -260,7 +269,6 @@ io.on("connection", socket => {
                         break;
                     }
                 }
-                console.log('yey')
                 // TODO: edit gradebook
                 course.markModified('lectures');
                 course.save();            
