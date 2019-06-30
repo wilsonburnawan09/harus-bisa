@@ -132,6 +132,24 @@ io.on("connection", socket => {
                                 socket.gradebook.statistics[quiz.id][answer_index] = 0; 
                             }
                         });
+                        
+                        var statistic = {
+                            total_participants: 0,
+                            answers: {}
+                        }
+                        var raw_stat = socket.gradebook.statistics[quiz_id];
+                        var total = raw_stat["total_participants"];
+                        statistic["total_participants"] = total;
+                        for ([answer, count] of Object.entries(raw_stat)) {
+                            if(answer != "total_participants") {
+                                var percent = Math.trunc((count/total)*100);
+                                var a_ascii = 65;
+                                var answer_letter = String.fromCharCode(parseInt(answer) + a_ascii);
+                                statistic["answers"][answer_letter] = percent.toString();
+                            }
+                        }
+                        socket.emit("new_statistic", statistic);
+
                         for(var i=0; i<course.lectures.length; i++){
                             if ( course.lectures[i].id == data.lecture_id) {
                                 course.lectures[i].attendance = 0;
