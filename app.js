@@ -48,6 +48,9 @@ io.on("connection", socket => {
         socket.user_role = data.user_role;
         socket.valid_rooms = new Set();
         socket.live_lectures = new Set();
+        if (socket.user_role == "professor") {
+            socket.gradebook = {};
+        }
         var course = null;
         if (ObjectId.isValid(data.course_id)){
             course = await Course.findById(data.course_id);
@@ -85,6 +88,9 @@ io.on("connection", socket => {
         console.log('The user is in room: ', Object.keys(socket.rooms));
         console.log('The user valid rooms are: ', socket.valid_rooms);
         console.log('The user live lectures are: ', socket.live_lectures);
+        if (socket.user_role === "professor") {
+            console.log(socket.gradebook);
+        }
         // console.log(socket.id in io.sockets.adapter.rooms);
         // console.log('a' in io.sockets.adapter.rooms);
     })
@@ -96,10 +102,12 @@ io.on("connection", socket => {
             var live = null;
             var date = null;
             var lecture_id = data.lecture_id;
+            var lecture = null;
             Course.findById(data.course_id, function(err, course){
                 if (course.instructor_id == socket.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
                         if ( course.lectures[i].id == data.lecture_id) {
+                            lecture = course.lectures[i];
                             if (!course.lectures[i].has_lived) {
                                 course.lectures[i].has_lived = true;
                             }
@@ -110,6 +118,20 @@ io.on("connection", socket => {
                         }
                     }
                     if (live) {
+                        socket.gradebook["course_id"] = data.course_id;
+                        socket.gradebook["lecture_id"] = data.lecture_id;
+                        // many quiz in a lecture
+                        socket.gradebook["statistics"] = {};
+                        socket.gradebook["student_answers"] = {};
+                        lecture.quizzes.forEach( (quiz) => {
+                            socket.gradebook.statistics[quiz.id] = {
+                                total_participants: 0
+                            }
+                            socket.gradebook.student_answers[quiz.id] = {}
+                        });
+                        console.log("hey");
+
+
                         course.course_gradebook.forEach((value, user_id) => {
                             if(value.role != "professor"){
                                 var lecture_grade = {
@@ -146,6 +168,7 @@ io.on("connection", socket => {
     });
 
     // TODO leave lecture
+    // TODO save present count in database
     socket.on("participate_lecture", async (data) => {
         if (socket.user_role === "student") {
             var nonactive_room = data.course_id + "-" + data.lecture_id;
@@ -161,9 +184,11 @@ io.on("connection", socket => {
                 socket.to(active_room).emit("new_student_join", data);
                 var course = await Course.findById(data.course_id);
                 if (course.course_gradebook.has(socket.user_id)) {
-                    course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present = true;
-                    course.markModified('course_gradebook');
-                    course.save();
+                    if (!course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present) {
+                        course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present = true;
+                        course.markModified('course_gradebook');
+                        course.save();
+                    }
                 } else {
                     socket.leave(active_room);
                     socket.live_lectures.delete(active_room);
@@ -176,22 +201,59 @@ io.on("connection", socket => {
     socket.on("answer_question", (data) => {
         var active_room = data.course_id + "+" + data.lecture_id;
         if (socket.user_role === "student") {
-            console.log(socket.user_id);
-            console.log(data.course_id);
-            console.log(data.lecture_id);
-            console.log(data.question_number);
-            console.log(data.answer);
-            dat = {
-                [data.course_id]: {
-                    [socket.user_id]: {
-                        [data.lecture_id]: {
-                            [data.question_number]: data.answer
-                        }
-                    }
+            var student_answer = {
+                user_id: socket.user_id,
+                course_id: data.course_id,
+                lecture_id: data.lecture_id,
+                quiz_id: data.quiz_id,
+                quiz_answer: data.answer,
+            }
+            socket.to(active_room).emit("new_answer", student_answer);
+        }
+    });
+
+    socket.on("record_answer", (data) => {
+        if (socket.user_role === "professor") {
+            var user_id = data.user_id;
+            var course_id = data.course_id;
+            var lecture_id = data.lecture_id;
+            var quiz_id = data.quiz_id;
+            var quiz_answer = data.quiz_answer;
+            if ( (course_id == socket.gradebook.course_id) && (lecture_id == socket.gradebook.lecture_id) ) {
+                if ( !(user_id in socket.gradebook.student_answers[quiz_id]) ){
+                    socket.gradebook.statistics[quiz_id].total_participants += 1;
+                } else {
+                    var old_answer = socket.gradebook.student_answers[quiz_id][user_id];
+                    socket.gradebook.statistics[quiz_id][old_answer] -= 1
+                }
+                if (quiz_answer in socket.gradebook.statistics[quiz_id]) {
+                    socket.gradebook.statistics[quiz_id][quiz_answer] += 1;
+                } else {
+                    socket.gradebook.statistics[quiz_id][quiz_answer] = 1;
+                }
+                socket.gradebook.student_answers[quiz_id][user_id] = quiz_answer;
+            }
+            var statistic = {
+                total_participants: 0,
+                answers: {}
+            }
+            var raw_stat = socket.gradebook.statistics[quiz_id];
+            var total = raw_stat["total_participants"];
+            statistic["total_participants"] = total;
+            for ([answer, count] of Object.entries(raw_stat)) {
+                if(answer != "total_participants") {
+                    var percent = Math.trunc((count/total)*100);
+                    var a_ascii = 65;
+                    var answer_letter = String.fromCharCode(parseInt(answer) + a_ascii);
+                    statistic["answers"][answer_letter] = percent.toString() + '%';
                 }
             }
-            socket.to(active_room).emit("new_answer", dat);
+            socket.emit("new_statistic", statistic);
         }
+    });
+
+    socket.on("show_statistic", (data) => {
+            
     });
 
 
