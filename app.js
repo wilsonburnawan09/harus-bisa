@@ -259,7 +259,8 @@ io.on("connection", socket => {
                         statistic["total_participants"] = total;
                         for ([answer, count] of Object.entries(raw_stat)) {
                             if(answer != "total_participants") {
-                                var percent = Math.trunc((count/total)*100);
+                                // var percent = Math.trunc((count/total)*100);
+                                var percent = 0;
                                 var a_ascii = 65;
                                 var answer_letter = String.fromCharCode(parseInt(answer) + a_ascii);
                                 statistic["answers"][answer_letter] = percent.toString();
