@@ -129,8 +129,12 @@ io.on("connection", socket => {
                             }
                             socket.gradebook.student_answers[quiz.id] = {}
                         });
-                        console.log("hey");
-
+                        for(var i=0; i<course.lectures.length; i++){
+                            if ( course.lectures[i].id == data.lecture_id) {
+                                course.lectures[i].attendance = 0;
+                                break;
+                            }
+                        }
 
                         course.course_gradebook.forEach((value, user_id) => {
                             if(value.role != "professor"){
@@ -184,9 +188,16 @@ io.on("connection", socket => {
                 socket.to(active_room).emit("new_student_join", data);
                 var course = await Course.findById(data.course_id);
                 if (course.course_gradebook.has(socket.user_id)) {
-                    if (!course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present) {
+                    if (course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present == false) {
                         course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present = true;
+                        for(var i=0; i<course.lectures.length; i++){
+                            if ( course.lectures[i].id == data.lecture_id) {
+                                course.lectures[i].attendance += 1;
+                                break;
+                            }
+                        }
                         course.markModified('course_gradebook');
+                        course.markModified('lectures');
                         course.save();
                     }
                 } else {
@@ -251,11 +262,6 @@ io.on("connection", socket => {
             socket.emit("new_statistic", statistic);
         }
     });
-
-    socket.on("show_statistic", (data) => {
-            
-    });
-
 
     socket.on("start_question", (data) => {
         if (socket.user_role === "professor"){
