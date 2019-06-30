@@ -313,7 +313,7 @@ io.on("connection", socket => {
                 course_id: data.course_id,
                 lecture_id: data.lecture_id,
                 quiz_id: data.quiz_id,
-                quiz_answer: data.answer,
+                quiz_answer: data.quiz_answer,
             }
             socket.to(active_room).emit("new_answer", student_answer);
             console.log(student_answer);
@@ -361,10 +361,10 @@ io.on("connection", socket => {
     });
 
     socket.on("show_answer", async (data) => {
+        var active_room = data.course_id + "+" + data.lecture_id;
         var course_id = data.course_id;
         var lecture_id = data.lecture_id;
         var quiz_id = data.quiz_id;
-        // pull correct anser from database
         var course = await Course.findById(course_id);
         var correct_answer;
         if (course.instructor_id == socket.user_id) {
@@ -381,7 +381,15 @@ io.on("connection", socket => {
                 }
             }
         }
-
+        var quiz_answer = {
+            course_id,
+            lecture_id,
+            quiz_id,
+            correct_answer
+        }
+        console.log(quiz_answer);
+        socket.to(active_room).emit("answer_opened", quiz_answer);
+        console.log(io.sockets.adapter.rooms);
     });
 
     socket.on("close_question", async (data) => {
