@@ -246,7 +246,7 @@ io.on("connection", socket => {
                             answer_shown: false,
                             time_duration: quizzes[quiz_index].time_duration,
                             answers: quizzes[quiz_index].answers,
-                            correct_answer: undefined,
+                            correct_answer: null,
                             student_answer: null
                         }
 
@@ -254,6 +254,8 @@ io.on("connection", socket => {
                             total_participants: 0,
                             answers: {}
                         }
+                        console.log(socket.gradebook.statistics)
+                        console.log(quiz_id);
                         var raw_stat = socket.gradebook.statistics[quiz_id];
                         var total = raw_stat["total_participants"];
                         statistic["total_participants"] = total;
@@ -305,8 +307,8 @@ io.on("connection", socket => {
                             answer_shown: false,
                             time_duration: new_dur,
                             answers: quizzes[quiz_index].answers,
-                            student_answer: undefined,
-                            correct_answer: undefined,
+                            student_answer: null,
+                            correct_answer: null,
                         }
 
                         if (data.new_duration > 0) {
@@ -433,8 +435,8 @@ io.on("connection", socket => {
                             answer_shown: false,
                             time_duration: quizzes[quiz_index].time_duration,
                             answers: quizzes[quiz_index].answers,
-                            student_answer: undefined,
-                            correct_answer: undefined,
+                            student_answer: null,
+                            correct_answer: null,
                         }
                         socket.to(active_room).emit("question_closed", quiz);
                         break;
