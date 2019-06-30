@@ -128,6 +128,9 @@ io.on("connection", socket => {
                                 total_participants: 0
                             }
                             socket.gradebook.student_answers[quiz.id] = {}
+                            for (answer_index in quiz.answers) {
+                                socket.gradebook.statistics[quiz.id][answer_index] = 0; 
+                            }
                         });
                         for(var i=0; i<course.lectures.length; i++){
                             if ( course.lectures[i].id == data.lecture_id) {
@@ -334,11 +337,7 @@ io.on("connection", socket => {
                     var old_answer = socket.gradebook.student_answers[quiz_id][user_id];
                     socket.gradebook.statistics[quiz_id][old_answer] -= 1
                 }
-                if (quiz_answer in socket.gradebook.statistics[quiz_id]) {
-                    socket.gradebook.statistics[quiz_id][quiz_answer] += 1;
-                } else {
-                    socket.gradebook.statistics[quiz_id][quiz_answer] = 1;
-                }
+                socket.gradebook.statistics[quiz_id][quiz_answer] += 1;
                 socket.gradebook.student_answers[quiz_id][user_id] = quiz_answer;
             }
             var statistic = {
@@ -387,8 +386,8 @@ io.on("connection", socket => {
             quiz_id,
             correct_answer
         }
-        console.log(quiz_answer);
         socket.to(active_room).emit("answer_opened", quiz_answer);
+        console.log(quiz_answer);
     });
 
     socket.on("close_question", async (data) => {
