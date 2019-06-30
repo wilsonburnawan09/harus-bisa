@@ -306,7 +306,7 @@ io.on("connection", socket => {
                             time_duration: new_dur,
                             answers: quizzes[quiz_index].answers,
                             student_answer: undefined,
-                            correct_answer: null,
+                            correct_answer: undefined,
                         }
 
                         if (data.new_duration > 0) {
@@ -434,7 +434,7 @@ io.on("connection", socket => {
                             time_duration: quizzes[quiz_index].time_duration,
                             answers: quizzes[quiz_index].answers,
                             student_answer: undefined,
-                            correct_answer: null,
+                            correct_answer: undefined,
                         }
                         socket.to(active_room).emit("question_closed", quiz);
                         break;
