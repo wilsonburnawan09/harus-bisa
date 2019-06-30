@@ -353,7 +353,7 @@ io.on("connection", socket => {
                     var percent = Math.trunc((count/total)*100);
                     var a_ascii = 65;
                     var answer_letter = String.fromCharCode(parseInt(answer) + a_ascii);
-                    statistic["answers"][answer_letter] = percent.toString() + '%';
+                    statistic["answers"][answer_letter] = percent.toString();
                 }
             }
             socket.emit("new_statistic", statistic);
@@ -389,7 +389,6 @@ io.on("connection", socket => {
         }
         console.log(quiz_answer);
         socket.to(active_room).emit("answer_opened", quiz_answer);
-        console.log(io.sockets.adapter.rooms);
     });
 
     socket.on("close_question", async (data) => {
