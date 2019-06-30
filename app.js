@@ -254,8 +254,6 @@ io.on("connection", socket => {
                             total_participants: 0,
                             answers: {}
                         }
-                        console.log(socket.gradebook.statistics)
-                        console.log(quiz_id);
                         var raw_stat = socket.gradebook.statistics[quiz_id];
                         var total = raw_stat["total_participants"];
                         statistic["total_participants"] = total;
@@ -338,7 +336,6 @@ io.on("connection", socket => {
                 quiz_answer: data.quiz_answer,
             }
             socket.to(active_room).emit("new_answer", student_answer);
-            console.log(student_answer);
         }
     });
 
@@ -406,7 +403,6 @@ io.on("connection", socket => {
             correct_answer
         }
         socket.to(active_room).emit("answer_opened", quiz_answer);
-        console.log(quiz_answer);
     });
 
     socket.on("close_question", async (data) => {
