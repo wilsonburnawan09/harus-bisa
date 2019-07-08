@@ -3,6 +3,7 @@ var cors = require('cors');
 var app = express();
 var db = require('./db');
 var Course = require('./model/Course');
+var User = require('./model/User');
 var ObjectId = require('mongoose').Types.ObjectId;
 
 app.use(cors());
@@ -44,41 +45,46 @@ const io = require("socket.io")(server, {
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
     socket.on("set_socket_data", async (data) => {
+        // data.user_id
+        // data.course_id
+        var user = await User.findById(data.user_id);
+        socket.user_role = user.role;
         socket.user_id = data.user_id;
-        socket.user_role = data.user_role;
-        socket.valid_rooms = new Set();
-        socket.live_lectures = new Set();
+        socket.course_id = data.course_id;
+        socket.nonactive_rooms = new Set();
+        socket.active_rooms = new Set();
         if (socket.user_role == "professor") {
-            socket.gradebook = {};
+            socket.gradebook = {
+                course_id: socket.course_id,
+                lecture_id: null,
+                in_class: 0,
+                attendance: 0,
+                students: new Set(),
+                statistics: {}, // per quiz
+                student_answers: {} // per student
+            }
+            socket.quizzes = [];
         }
-        var course = null;
-        if (ObjectId.isValid(data.course_id)){
-            course = await Course.findById(data.course_id);
-        };
-        if (course != null){
-            course.lectures.forEach(lecture => {
-                var nonactive_room = data.course_id + "-" + lecture.id;
-                var active_room = data.course_id + "+" + lecture.id;
-                socket.valid_rooms.add(nonactive_room);
+
+        var course_exist = user.courses.some(function (course) {
+            return course.equals(socket.course_id);
+        });
+
+        if (course_exist) {
+            var course = await Course.findById(socket.course_id);
+            course.lectures.forEach( (lecture) => {
+                var nonactive_room = socket.course_id + "-" + lecture.id;
+                socket.nonactive_rooms.add(nonactive_room);
                 socket.join(nonactive_room);
-                if ( (socket.user_role === "professor") && (lecture.live === true) ) {
-                    socket.join(active_room);
-                    socket.live_lectures.add(active_room);
+                if ( (socket.user_role == "student") && lecture.live) {
+                    data = {
+                        lecture_id: lecture.id,
+                        date: lecture.date,
+                        live: lecture.live,
+                    }
+                    socket.emit("lecture_is_live", data);
                 }
             });
-            if (socket.user_role === "student") {
-                for(var i=0; i<course.lectures.length; i++){
-                    if ( course.lectures[i].live == true) {
-                        data = {
-                            live: course.lectures[i].live,
-                            date: course.lectures[i].date,
-                            lecture_id: course.lectures[i].id
-                        }
-                        socket.emit("lecture_is_live", data);
-                        break;
-                    }
-                } 
-            }
         }
     });
 
@@ -86,132 +92,192 @@ io.on("connection", socket => {
         console.log('The user id is: ', socket.user_id);
         console.log('The user role is: ', socket.user_role);
         console.log('The user is in room: ', Object.keys(socket.rooms));
-        console.log('The user valid rooms are: ', socket.valid_rooms);
-        console.log('The user live lectures are: ', socket.live_lectures);
+        console.log('The user inactive rooms are: ', socket.nonactive_rooms);
+        console.log('The user active rooms are: ', socket.active_rooms);
         if (socket.user_role === "professor") {
-            console.log(socket.gradebook);
+            console.log('The user gradebook: ', socket.gradebook);
+            console.log('Quizzes: ', socket.quizzes);
         }
-        // console.log(socket.id in io.sockets.adapter.rooms);
-        // console.log('a' in io.sockets.adapter.rooms);
-    })
+        console.log("");
+    });
 
-    socket.on("toggle_lecture_live", (data) => {
-        var nonactive_room = data.course_id + "-" + data.lecture_id;
-        var active_room = data.course_id + "+" + data.lecture_id;
-        if (socket.user_role === "professor" && socket.valid_rooms.has(nonactive_room)) {
-            var live = null;
-            var date = null;
-            var lecture_id = data.lecture_id;
-            var lecture = null;
-            Course.findById(data.course_id, function(err, course){
-                if (course.instructor_id == socket.user_id) {
-                    for(var i=0; i<course.lectures.length; i++){
-                        if ( course.lectures[i].id == data.lecture_id) {
-                            lecture = course.lectures[i];
-                            if (!course.lectures[i].has_lived) {
-                                course.lectures[i].has_lived = true;
-                            }
-                            course.lectures[i].live = !course.lectures[i].live;
-                            live = course.lectures[i].live;
-                            date = course.lectures[i].date;
-                            break;
-                        }
+    socket.on("start_lecture", async (data) => {
+        var nonactive_room = socket.course_id + "-" + data.lecture_id;
+        var active_room = socket.course_id + "+" + data.lecture_id;
+        var lecture;
+        if (socket.user_role == "professor" && socket.nonactive_rooms.has(nonactive_room) && socket.gradebook.lecture_id == null) {
+            var course = await Course.findById(socket.course_id);
+            if (course.instructor_id == socket.user_id) {
+                for (var i=0; i<course.lectures.length; i++){
+                    if (course.lectures[i].id == data.lecture_id) {
+                        course.lectures[i].has_lived = true;
+                        course.lectures[i].live = true;
+                        course.lectures[i].attendance = 0;
+                        lecture = course.lectures[i];
+                        break;
                     }
-                    if (live) {
-                        socket.gradebook["course_id"] = data.course_id;
-                        socket.gradebook["lecture_id"] = data.lecture_id;
-                        // many quiz in a lecture
-                        socket.gradebook["statistics"] = {};
-                        socket.gradebook["student_answers"] = {};
-                        lecture.quizzes.forEach( (quiz) => {
-                            socket.gradebook.statistics[quiz.id] = {
-                                total_participants: 0
-                            }
-                            socket.gradebook.student_answers[quiz.id] = {}
-                            for (answer_index in quiz.answers) {
-                                socket.gradebook.statistics[quiz.id][answer_index] = 0; 
-                            }
-                        });
-                        for(var i=0; i<course.lectures.length; i++){
-                            if ( course.lectures[i].id == data.lecture_id) {
-                                course.lectures[i].attendance = 0;
-                                break;
-                            }
-                        }
-
-                        course.course_gradebook.forEach((value, user_id) => {
-                            if(value.role != "professor"){
-                                var lecture_grade = {
-                                    present: false,
-                                    quiz_answers: {}
-                                }
-                                course.course_gradebook.get(user_id).lecture_grades[data.lecture_id] = lecture_grade;
-                            }
-                        });
-                    }
-                    course.markModified('lectures');
-                    course.markModified('course_gradebook');
-                    course.save().then( () => {
-                        data = {
-                            live,
-                            date,
-                            lecture_id
-                        }
-                        if (live) {
-                            socket.join(active_room, () => { 
-                                socket.to(nonactive_room).emit("lecture_is_live", data);
-                                socket.live_lectures.add(active_room);
-                            });
-                        } else if(!live) {
-                            socket.leave(active_room, () => {
-                                socket.to(nonactive_room).emit("lecture_is_live", data);
-                                socket.live_lectures.delete(active_room);
-                            });
-                        }
-                    });
                 }
-            });
+                course.course_gradebook.forEach((value, user_id) => {
+                    if(value.role != "professor"){
+                        var lecture_grade = {
+                            present: false,
+                            quiz_answers: {}
+                        }
+                        course.course_gradebook.get(user_id).lecture_grades[data.lecture_id] = lecture_grade;
+                    }
+                });
+                course.markModified("lectures");
+                course.markModified("course_gradebook");
+                course.save();
+
+                data = {
+                    lecture_id: data.lecture_id,
+                    live: true,
+                    date: lecture.date 
+                }
+                socket.join(active_room);
+                io.to(nonactive_room).emit("lecture_is_live", data);
+                socket.active_rooms.add(active_room);
+
+                socket.gradebook["lecture_id"] = data.lecture_id;
+                socket.gradebook["students"].clear();
+                var quizzes = [];
+                lecture.quizzes.forEach( (quiz) => {
+                    var basic_quiz = quiz;
+                    basic_quiz["live"] = false;
+                    quizzes.push(basic_quiz);
+                    socket.gradebook.statistics[quiz.id] = {
+                        total_participants: 0
+                    }
+                    socket.gradebook.student_answers[quiz.id] = {}
+                    for (answer_index in quiz.answers) {
+                        socket.gradebook.statistics[quiz.id][answer_index] = 0; 
+                    }
+                });
+                socket.quizzes = quizzes;
+            }
+        } else {
+            socket.emit("lecture_is_live", {live: false});
+        }
+    });
+
+    socket.on("stop_lecture", async (data) => {
+        if (socket.gradebook.lecture_id == data.lecture_id) {
+            var nonactive_room = socket.course_id + "-" + data.lecture_id;
+            var active_room = socket.course_id + "+" + data.lecture_id;
+            var date;
+            var course = await Course.findById(socket.course_id);
+            for (var i=0; i<course.lectures.length; i++){
+                if (course.lectures[i].id == data.lecture_id) {
+                    course.lectures[i].live = false;
+                    course.lectures[i].attendance = socket.gradebook.attendance;
+                    date = course.lectures[i].date;
+                    break;
+                }
+            }
+            course.markModified("lectures");
+            course.save();
+            data = {
+                lecture_id: data.lecture_id,
+                live: false,
+                date: date
+            }
+            socket.leave(active_room);
+            io.to(nonactive_room).emit("lecture_is_live", data);
+            socket.active_rooms.delete(active_room);
+            
+            socket.gradebook = {
+                course_id: socket.course_id,
+                lecture_id: null,
+                in_class: 0,
+                attendance: 0,
+                students: new Set(),
+                statistics: {}, // per quiz
+                student_answers: {} // per student
+            }
         }
     });
 
     // TODO leave lecture
     socket.on("participate_lecture", async (data) => {
-        if (socket.user_role === "student") {
-            var nonactive_room = data.course_id + "-" + data.lecture_id;
-            var active_room = data.course_id + "+" + data.lecture_id;
-            if (socket.valid_rooms.has(nonactive_room) && (active_room in io.sockets.adapter.rooms)) {
-                data = {
-                    user_id: socket.user_id,
-                    course_id: data.course_id,
-                    lecture_id: data.lecture_id
-                }
-                socket.join(active_room);
-                socket.live_lectures.add(active_room);
-                socket.to(active_room).emit("new_student_join", data);
-                var course = await Course.findById(data.course_id);
+        if (socket.user_role == "student") {
+            var nonactive_room = socket.course_id + "-" + data.lecture_id;
+            var active_room = socket.course_id + "+" + data.lecture_id;
+            if (socket.nonactive_rooms.has(nonactive_room) && (active_room in io.sockets.adapter.rooms)) {
+                var course = await Course.findById(socket.course_id);
                 if (course.course_gradebook.has(socket.user_id)) {
-                    if (course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present == false) {
-                        course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present = true;
-                        for(var i=0; i<course.lectures.length; i++){
-                            if ( course.lectures[i].id == data.lecture_id) {
-                                course.lectures[i].attendance += 1;
-                                break;
-                            }
-                        }
-                        course.markModified('course_gradebook');
-                        course.markModified('lectures');
-                        course.save();
+                    course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present = true;
+                    course.markModified('course_gradebook');
+                    course.save();
+
+                    socket.join(active_room);
+                    socket.active_rooms.add(active_room);
+                    data = {
+                        socket_id: socket.id,
+                        user_id: socket.user_id
                     }
-                } else {
-                    socket.leave(active_room);
-                    socket.live_lectures.delete(active_room);
+                    socket.to(active_room).emit("new_student_join", data);
                 }
+            } 
+        }
+    });
+
+    socket.on("record_attendance", (data) => {
+        if (socket.user_role == "professor") {
+            var student_id = data.user_id;
+            var socket_id = data.socket_id;
+            if (!socket.gradebook.students.has(student_id)) {
+                socket.gradebook.students.add(student_id);
+                socket.gradebook.attendance += 1;
+                socket.gradebook.in_class += 1;
+                socket.to(socket_id).emit("lecture_status", {quizzes: []});
+                socket.emit("student_in_session", {total_student: socket.gradebook.in_class});
+            } else {
+                socket.to(socket_id).emit("lecture_status", {quizzes: ['TODO']});
             }
         }
     });
 
+    socket.on("leave_lecture", (data) => {
+        if (socket.user_role == "student") {
+            var active_room = socket.course_id + "+" + data.lecture_id;
+            if (socket.active_rooms.has(active_room)) {
+                data = {
+                    socket_id: socket.id,
+                    user_id: socket.user_id
+                }
+                socket.to(active_room).emit("student_leave", data);
+                socket.leave(active_room);
+                socket.active_rooms.delete(active_room);
+            } 
+        }
+    });
+
+    socket.on("remove_student", (data) => {
+        if (socket.user_role == "professor") {
+            var student_id = data.user_id;
+            var socket_id = data.socket_id;
+            if (socket.gradebook.students.has(student_id)) {
+                socket.gradebook.students.delete(student_id);
+                socket.gradebook.in_class -= 1;
+                socket.emit("new_student", {total_student: socket.gradebook.in_class});
+            } 
+        }
+    });
+
+    socket.on("show_current_quiz", (data) => {
+        var quiz_id = data.quiz_id;
+        var quiz;
+        for (var i=0; i<socket.quizzes.length; i++) {
+            if (socket.quizzes[i].id == quiz_id) {
+                quiz = socket.quizzes[i];
+            }
+        }
+        socket.emit("current_quiz", {quiz: quiz});
+    });
+
     socket.on("start_question", (data) => {
-        if (socket.user_role === "professor"){
+        if (socket.user_role == "professor"){
             var active_room = data.course_id + "+" + data.lecture_id;
             var course_id = data.course_id;
             var lecture_id = data.lecture_id;
@@ -230,7 +296,7 @@ io.on("connection", socket => {
                                         break;
                                     }
                                 }
-                                course.lectures[i].quizzes[quiz_index].opened = true;
+                                course.lectures[i].quizzes[quiz_index].include = true;
                                 course.markModified("lectures");
                                 course.save();
                                 break;
@@ -449,7 +515,7 @@ io.on("connection", socket => {
     socket.on("disconnect", async () => {
         console.log("user ", socket.user_id, " ", socket.user_role, " is disconnected");
         if (socket.user_role === "professor") {
-            var connected_lectures = socket.live_lectures.entries();
+            var connected_lectures = socket.active_rooms.entries();
             for (var room of connected_lectures){
                 var cleaned_room = room[0];
                 var split_pos = 0;
@@ -462,7 +528,7 @@ io.on("connection", socket => {
                 var course_id = cleaned_room.slice(0,split_pos);
                 var lecture_id = cleaned_room.slice(split_pos+1);
                 var live = false;
-                var date = null;
+                var date ;
                 var course = await Course.findById(course_id);
                 if (course.instructor_id == socket.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
