@@ -274,6 +274,7 @@ io.on("connection", socket => {
             }
         }
         socket.emit("current_quiz", {quiz: quiz});
+        console.log(quiz);
     });
 
     socket.on("start_question", (data) => {
@@ -298,8 +299,8 @@ io.on("connection", socket => {
                             break;
                         }
                     }
+                    socket.quizzes[quiz_id]["live"] = true;
                     var quiz = socket.quizzes[quiz_id];
-                    quiz["live"] = true;
                     quiz["answer_shown"] = false;
                     quiz["student_answer"] = null;
                     quiz["correct_answer"] = null;
@@ -457,13 +458,13 @@ io.on("connection", socket => {
     });
 
     socket.on("close_question", async (data) => {
-        var active_room = data.course_id + "+" + data.lecture_id;
-        if (socket.user_role == "professor" && socket.live_lectures.has(active_room)) {
-            var course = await Course.findById(data.course_id);
+        var active_room = socket.course_id + "+" + socket.gradebook.lecture_id;
+        if (socket.user_role == "professor" && socket.active_rooms.has(active_room)) {
+            var course = await Course.findById(socket.course_id);
             var quiz_id = data.quiz_id;
             if (course.instructor_id == socket.user_id) {
                 for(var i=0; i<course.lectures.length; i++){
-                    if ( course.lectures[i].id == data.lecture_id) {
+                    if ( course.lectures[i].id == socket.gradebook.lecture_id) {
                         var quizzes = course.lectures[i].quizzes;
                         var quiz_index = 0;
                         for (var j=0; j<quizzes.length; j++) {
@@ -475,23 +476,17 @@ io.on("connection", socket => {
                         course.lectures[i].quizzes[quiz_index].time_duration = 0;
                         
                         var quiz = {
-                            question: quizzes[quiz_index].question,
-                            id: quizzes[quiz_index].id,
-                            quiz_index: quiz_index, 
+                            quiz_id: quizzes[quiz_index].id,
                             live: false,
-                            answer_shown: false,
-                            time_duration: quizzes[quiz_index].time_duration,
-                            answers: quizzes[quiz_index].answers,
-                            student_answer: null,
-                            correct_answer: null,
                         }
-                        socket.to(active_room).emit("question_closed", quiz);
+                        io.to(active_room).emit("question_is_live", quiz);
                         break;
                     }
                 }
                 // TODO: edit gradebook
                 course.markModified('lectures');
                 course.save();            
+                socket.quizzes
             } 
         }
     });
