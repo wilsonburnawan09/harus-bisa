@@ -260,7 +260,7 @@ io.on("connection", socket => {
             if (socket.gradebook.students.has(student_id)) {
                 socket.gradebook.students.delete(student_id);
                 socket.gradebook.in_class -= 1;
-                socket.emit("new_student", {total_student: socket.gradebook.in_class});
+                socket.emit("student_in_session", {total_student: socket.gradebook.in_class});
             } 
         }
     });
@@ -277,66 +277,50 @@ io.on("connection", socket => {
     });
 
     socket.on("start_question", (data) => {
-        if (socket.user_role == "professor"){
-            var active_room = data.course_id + "+" + data.lecture_id;
-            var course_id = data.course_id;
-            var lecture_id = data.lecture_id;
-            var quiz_id = data.quiz_id;
-            var quizzes = null;
-            if (socket.live_lectures.has(active_room)) {
-                Course.findById(course_id, function(err, course){
-                    if (course.instructor_id == socket.user_id) {
-                        for(var i=0; i<course.lectures.length; i++){
-                            if ( course.lectures[i].id == lecture_id) {
-                                quizzes = course.lectures[i].quizzes;
-                                var quiz_index = 0;
-                                for (var j=0; j<quizzes.length; j++) {
-                                    if (quizzes[j].id == quiz_id) {
-                                        quiz_index = j;
-                                        break;
-                                    }
-                                }
-                                course.lectures[i].quizzes[quiz_index].include = true;
-                                course.markModified("lectures");
-                                course.save();
-                                break;
-                            }
-                        }
-                        
-                        // var quiz = quizzes[quiz_index];
-                        var quiz = {
-                            question: quizzes[quiz_index].question,
-                            id: quizzes[quiz_index].id,
-                            quiz_index: quiz_index, 
-                            live: true,
-                            answer_shown: false,
-                            time_duration: quizzes[quiz_index].time_duration,
-                            answers: quizzes[quiz_index].answers,
-                            correct_answer: null,
-                            student_answer: null
-                        }
+        var active_room = socket.course_id + "+" + socket.gradebook.lecture_id;
+        var quiz_id = data.quiz_id;
 
-                        var statistic = {
-                            total_participants: 0,
-                            answers: {}
-                        }
-                        var raw_stat = socket.gradebook.statistics[quiz_id];
-                        var total = raw_stat["total_participants"];
-                        statistic["total_participants"] = total;
-                        for ([answer, count] of Object.entries(raw_stat)) {
-                            if(answer != "total_participants") {
-                                // var percent = Math.trunc((count/total)*100);
-                                var percent = 0;
-                                var a_ascii = 65;
-                                var answer_letter = String.fromCharCode(parseInt(answer) + a_ascii);
-                                statistic["answers"][answer_letter] = percent.toString();
+        if (socket.user_role == "professor" && socket.active_rooms.has(active_room)){
+            Course.findById(socket.course_id, function(err, course){
+                if (course.instructor_id == socket.user_id) {
+                    for(var i=0; i<course.lectures.length; i++){
+                        if ( course.lectures[i].id == socket.gradebook.lecture_id) {
+                            var quiz_index = 0;
+                            for (var j=0; j<socket.quizzes.length; j++) {
+                                if (socket.quizzes[j].id == quiz_id) {
+                                    quiz_index = j;
+                                    break;
+                                }
                             }
+                            course.lectures[i].quizzes[quiz_index].include = true;
+                            course.markModified("lectures");
+                            course.save();
+                            break;
                         }
-                        socket.emit("new_statistic", statistic);
-                        socket.to(active_room).emit("new_question", quiz);
                     }
-                });
-            }
+                    var quiz = socket.quizzes[quiz_id];
+                    quiz["live"] = true;
+                    quiz["answer_shown"] = false;
+                    quiz["student_answer"] = null;
+                    quiz["correct_answer"] = null;
+
+                    var statistic = {
+                        total_participants: 0,
+                        answers: {}
+                    }
+                    for ([answer, count] of Object.entries(socket.gradebook.statistics[quiz_id])) {
+                        if(answer != "total_participants") {
+                            var percent = 0;
+                            var a_ascii = 65;
+                            var answer_letter = String.fromCharCode(parseInt(answer) + a_ascii);
+                            statistic["answers"][answer_letter] = percent.toString();
+                        }
+                    }
+                    socket.emit("new_statistic", statistic);
+                    socket.to(active_room).emit("new_question", quiz);
+                    socket.emit("question_is_live", {live: true});
+                }
+            });
         }
     });
 
