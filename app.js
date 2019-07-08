@@ -274,7 +274,6 @@ io.on("connection", socket => {
             }
         }
         socket.emit("current_quiz", {quiz: quiz});
-        console.log(quiz);
     });
 
     socket.on("start_question", (data) => {
@@ -300,7 +299,7 @@ io.on("connection", socket => {
                         }
                     }
                     socket.quizzes[quiz_id]["live"] = true;
-                    var quiz = socket.quizzes[quiz_id];
+                    var quiz = JSON.parse(JSON.stringify(socket.quizzes[quiz_id]));
                     quiz["answer_shown"] = false;
                     quiz["student_answer"] = null;
                     quiz["correct_answer"] = null;
@@ -474,7 +473,7 @@ io.on("connection", socket => {
                             }
                         }
                         course.lectures[i].quizzes[quiz_index].time_duration = 0;
-                        
+
                         var quiz = {
                             quiz_id: quizzes[quiz_index].id,
                             live: false,
@@ -485,8 +484,14 @@ io.on("connection", socket => {
                 }
                 // TODO: edit gradebook
                 course.markModified('lectures');
-                course.save();            
-                socket.quizzes
+                course.save();      
+                for (var i=0; i<socket.quizzes.length; i++){
+                    if (socket.quizzes[i].id == data.quiz_id) {
+                        socket.quizzes[i]["live"] = false;
+                    }
+                    break;
+                }
+
             } 
         }
     });
