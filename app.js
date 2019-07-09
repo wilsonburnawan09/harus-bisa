@@ -298,7 +298,6 @@ io.on("connection", socket => {
                             break;
                         }
                     }
-                    console.log(socket.quizzes);
                     socket.quizzes[quiz_index]["live"] = true;
                     var quiz = JSON.parse(JSON.stringify(socket.quizzes[quiz_index]));
                     quiz["answer_shown"] = false;
@@ -318,7 +317,7 @@ io.on("connection", socket => {
                         }
                     }
                     socket.emit("new_statistic", statistic);
-                    socket.to(active_room).emit("new_question", quiz);
+                    socket.to(active_room).emit("new_question", {quiz: quiz});
                     socket.emit("question_is_live", {live: true});
                     
                     function tick() {
@@ -326,6 +325,7 @@ io.on("connection", socket => {
                         if (socket.quizzes[quiz_index]["time_duration"] <= 0) {
                             clearInterval(socket.intervalHandle);
                             console.log('done');
+                            return;
                         }
                         socket.quizzes[quiz_index]["time_duration"] -= 1;
                     }
@@ -485,6 +485,7 @@ io.on("connection", socket => {
                             }
                         }
                         course.lectures[i].quizzes[quiz_index].time_duration = 0;
+                        socket.quizzes[quiz_index].time_duration = 0;
 
                         var quiz = {
                             quiz_id: quizzes[quiz_index].id,
