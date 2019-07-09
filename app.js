@@ -299,8 +299,8 @@ io.on("connection", socket => {
                         }
                     }
                     console.log(socket.quizzes);
-                    socket.quizzes[quiz_id]["live"] = true;
-                    var quiz = JSON.parse(JSON.stringify(socket.quizzes[quiz_id]));
+                    socket.quizzes[quiz_index]["live"] = true;
+                    var quiz = JSON.parse(JSON.stringify(socket.quizzes[quiz_index]));
                     quiz["answer_shown"] = false;
                     quiz["student_answer"] = null;
                     quiz["correct_answer"] = null;
@@ -322,12 +322,12 @@ io.on("connection", socket => {
                     socket.emit("question_is_live", {live: true});
                     
                     function tick() {
-                        console.log(socket.quizzes[quiz_id]["time_duration"]);
-                        if (socket.quizzes[quiz_id]["time_duration"] <= 0) {
+                        console.log(socket.quizzes[quiz_index]["time_duration"]);
+                        if (socket.quizzes[quiz_index]["time_duration"] <= 0) {
                             clearInterval(socket.intervalHandle);
                             console.log('done');
                         }
-                        socket.quizzes[quiz_id]["time_duration"] -= 1;
+                        socket.quizzes[quiz_index]["time_duration"] -= 1;
                     }
 
                     socket.intervalHandle = setInterval(tick, 1000);
