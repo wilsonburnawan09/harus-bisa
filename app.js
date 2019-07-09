@@ -298,6 +298,7 @@ io.on("connection", socket => {
                             break;
                         }
                     }
+                    console.log(socket.quizzes);
                     socket.quizzes[quiz_id]["live"] = true;
                     var quiz = JSON.parse(JSON.stringify(socket.quizzes[quiz_id]));
                     quiz["answer_shown"] = false;
@@ -319,6 +320,17 @@ io.on("connection", socket => {
                     socket.emit("new_statistic", statistic);
                     socket.to(active_room).emit("new_question", quiz);
                     socket.emit("question_is_live", {live: true});
+                    
+                    function tick() {
+                        console.log(socket.quizzes[quiz_id]["time_duration"]);
+                        if (socket.quizzes[quiz_id]["time_duration"] <= 0) {
+                            clearInterval(socket.intervalHandle);
+                            console.log('done');
+                        }
+                        socket.quizzes[quiz_id]["time_duration"] -= 1;
+                    }
+
+                    socket.intervalHandle = setInterval(tick, 1000);
                 }
             });
         }
