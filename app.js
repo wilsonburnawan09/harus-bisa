@@ -281,7 +281,9 @@ io.on("connection", socket => {
         var quiz_id = data.quiz_id;
         var quiz_index = 0;
         var lecture_index = 0;
+        console.log('hey');
         if (socket.user_role == "professor" && socket.active_rooms.has(active_room)){
+            console.log('hm')
                 var course = Course.findById(socket.course_id)
                 if (course.instructor_id == socket.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
