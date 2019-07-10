@@ -326,6 +326,12 @@ io.on("connection", socket => {
                             // TODO save 0 to database
                             // question is live false
                             clearInterval(socket.intervalHandle);
+                            var quiz = {
+                                quiz_id: socket.quizzes[quiz_index].id,
+                                live: false,
+                            }
+                            io.to(active_room).emit("question_is_live", quiz);
+                            socket.quizzes[quiz_index]["live"] = false;
                             return;
                         }
                         socket.quizzes[quiz_index]["time_duration"] -= 1;
@@ -359,29 +365,26 @@ io.on("connection", socket => {
                             new_dur = 0;
                         }
 
-                        course.lectures[i].quizzes[quiz_index].time_duration = new_dur;
+                        // course.lectures[i].quizzes[quiz_index].time_duration = new_dur;
                         
-                        var quiz = {
-                            question: quizzes[quiz_index].question,
-                            id: quizzes[quiz_index].id,
-                            quiz_index: quiz_index, 
-                            live: true,
-                            answer_shown: false,
-                            time_duration: new_dur,
-                            answers: quizzes[quiz_index].answers,
-                            student_answer: null,
-                            correct_answer: null,
-                        }
+                        // var quiz = {
+                        //     question: quizzes[quiz_index].question,
+                        //     id: quizzes[quiz_index].id,
+                        //     quiz_index: quiz_index, 
+                        //     live: true,
+                        //     answer_shown: false,
+                        //     time_duration: new_dur,
+                        //     answers: quizzes[quiz_index].answers,
+                        //     student_answer: null,
+                        //     correct_answer: null,
+                        // }
 
-                        if (data.new_duration > 0) {
-                            socket.to(active_room).emit("time_change", quiz);
-                        } else {
-                            quiz.live = false;
-                            socket.to(active_room).emit("question_closed", quiz);
-                        }
+                        socket.quizzes[quiz_index].time_duration = new_dur;
+                        socket.to(active_room).emit("tick", { time_duration: socket.quizzes[quiz_index]["time_duration"], quiz_id: quiz_id});
+                       
                         
-                        course.markModified('lectures');
-                        course.save();  
+                        // course.markModified('lectures');
+                        // course.save();  
                         break;
                     }
                 }          
@@ -486,24 +489,12 @@ io.on("connection", socket => {
                             }
                         }
                         course.lectures[i].quizzes[quiz_index].time_duration = 0;
-                        socket.quizzes[quiz_index].time_duration = 0;
-                        var quiz = {
-                            quiz_id: socket.quizzes[quiz_index].id,
-                            live: false,
-                        }
-                        io.to(active_room).emit("question_is_live", quiz);
                         break;
                     }
                 }
                 // TODO: edit gradebook
                 course.markModified('lectures');
                 course.save();      
-                for (var i=0; i<socket.quizzes.length; i++){
-                    if (socket.quizzes[i].id == data.quiz_id) {
-                        socket.quizzes[i]["live"] = false;
-                    }
-                    break;
-                }
 
             } 
         }
