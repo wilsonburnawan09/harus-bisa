@@ -279,13 +279,14 @@ io.on("connection", socket => {
     socket.on("start_question", (data) => {
         var active_room = socket.course_id + "+" + socket.gradebook.lecture_id;
         var quiz_id = data.quiz_id;
-
+        var quiz_index = 0;
+        var lecture_index = 0;
         if (socket.user_role == "professor" && socket.active_rooms.has(active_room)){
-            Course.findById(socket.course_id, function(err, course){
+                var course = Course.findById(socket.course_id)
                 if (course.instructor_id == socket.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
                         if ( course.lectures[i].id == socket.gradebook.lecture_id) {
-                            var quiz_index = 0;
+                            lecture_index = i;
                             for (var j=0; j<socket.quizzes.length; j++) {
                                 if (socket.quizzes[j].id == quiz_id) {
                                     quiz_index = j;
@@ -332,6 +333,10 @@ io.on("connection", socket => {
                             }
                             io.to(active_room).emit("question_is_live", quiz);
                             socket.quizzes[quiz_index]["live"] = false;
+                            var course = Course.findById(socket.course_id);
+                            course.lectures[lecture_index].quizzes[quiz_index].time_duration = 0;
+                            course.markModified("lectures");
+                            course.save();
                             return;
                         }
                         socket.quizzes[quiz_index]["time_duration"] -= 1;
@@ -339,7 +344,7 @@ io.on("connection", socket => {
 
                     socket.intervalHandle = setInterval(tick, 1000);
                 }
-            });
+            
         }
     });
 
@@ -488,13 +493,14 @@ io.on("connection", socket => {
                                 break;
                             }
                         }
-                        course.lectures[i].quizzes[quiz_index].time_duration = 0;
+                        // course.lectures[i].quizzes[quiz_index].time_duration = 0;
+                        socket.quizzes[quiz_index].time_duration = new_dur;
                         break;
                     }
                 }
                 // TODO: edit gradebook
-                course.markModified('lectures');
-                course.save();      
+                // course.markModified('lectures');
+                // course.save();      
 
             } 
         }
