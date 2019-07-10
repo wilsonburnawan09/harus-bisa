@@ -179,7 +179,6 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             return res.status(500).send({ message: "Please provide time duration (number in seconds).", data: null});
         } else {
             time_duration = Number(req.body.time_duration);
-            console.log(time_duration);
         }
 
         if (req.body.point == null || isNaN(req.body.point)) {
@@ -273,7 +272,7 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
             course.lectures[lecture_index].quizzes[quiz_index].question = req.body.question.trim(); 
         }
 
-        if (req.body.answers) {
+        if (req.body.answers != null) {
             var answers = []
             cur_correct_answer = course.lectures[lecture_index].quizzes[quiz_index].correct_answer;
             if (!Array.isArray(req.body.answers)){
@@ -302,7 +301,7 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
             }
         }
 
-        if (req.body.time_duration) {
+        if (req.body.time_duration != null) {
             if (!isNaN(req.body.time_duration)) {
                 course.lectures[lecture_index].quizzes[quiz_index].time_duration = Number(req.body.time_duration);
             } else {
