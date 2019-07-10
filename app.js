@@ -321,10 +321,16 @@ io.on("connection", socket => {
                     socket.emit("question_is_live", {live: true});
                     
                     function tick() {
-                        console.log(socket.quizzes[quiz_index]["time_duration"]);
+                        io.to(active_room).emit("tick", { time_duration: socket.quizzes[quiz_index]["time_duration"], quiz_id: quiz_id});
                         if (socket.quizzes[quiz_index]["time_duration"] <= 0) {
+                            // TODO save 0 to database
+                            // question is live false
                             clearInterval(socket.intervalHandle);
-                            console.log('done');
+                            var quiz = {
+                                quiz_id: socket.quizzes[quiz_index].id,
+                                live: false,
+                            }
+                            io.to(active_room).emit("question_is_live", quiz);
                             return;
                         }
                         socket.quizzes[quiz_index]["time_duration"] -= 1;
@@ -487,11 +493,6 @@ io.on("connection", socket => {
                         course.lectures[i].quizzes[quiz_index].time_duration = 0;
                         socket.quizzes[quiz_index].time_duration = 0;
 
-                        var quiz = {
-                            quiz_id: quizzes[quiz_index].id,
-                            live: false,
-                        }
-                        io.to(active_room).emit("question_is_live", quiz);
                         break;
                     }
                 }
