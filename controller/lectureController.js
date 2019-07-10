@@ -175,7 +175,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
         }
 
 
-        if (!req.body.time_duration || isNaN(req.body.time_duration)) {
+        if (req.body.time_duration == null || isNaN(req.body.time_duration)) {
             return res.status(500).send({ message: "Please provide time duration (number in seconds).", data: null});
         } else {
             time_duration = Number(req.body.time_duration);
