@@ -156,7 +156,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
         }
 
 
-        if (!req.body.answers || req.body.answers.length == 0 ) {
+        if (req.body.answers == null || req.body.answers.length == 0 ) {
             return res.status(500).send({ message: "Please provide answers (number).", data: null});
         } else {
             if (!Array.isArray(req.body.answers)){
@@ -181,7 +181,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             time_duration = Number(req.body.time_duration);
         }
 
-        if (!req.body.point || isNaN(req.body.point)) {
+        if (req.body.point == null || isNaN(req.body.point)) {
             return res.status(500).send({ message: "Please provide question point (number) for problem.", data: null})
         } else {
             point = Number(req.body.point);
