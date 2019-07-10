@@ -299,7 +299,9 @@ io.on("connection", socket => {
                             break;
                         }
                     }
-                    socket.quizzes[quiz_index]["time_duration"] = course.lectures[lecture_index].quizzes[quiz_index].time_duration;
+                    socket.quizzes[quiz_index]["time_duration"] = course.lectures[lecture_index].quizzes[quiz_index]
+                    .time_duration;
+                    console.log('hey ',  socket.quizzes[quiz_index]["time_duration"])
                     socket.quizzes[quiz_index]["live"] = true;
                     var quiz = JSON.parse(JSON.stringify(socket.quizzes[quiz_index]));
                     quiz["answer_shown"] = false;
