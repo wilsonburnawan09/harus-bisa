@@ -145,6 +145,7 @@ io.on("connection", socket => {
                 lecture.quizzes.forEach( (quiz) => {
                     var basic_quiz = quiz;
                     basic_quiz["live"] = false;
+                    basic_quiz["answer_shown"] = false;
                     quizzes.push(basic_quiz);
                     socket.gradebook.statistics[quiz.id] = {
                         total_participants: 0
@@ -195,10 +196,10 @@ io.on("connection", socket => {
                 statistics: {}, // per quiz
                 student_answers: {} // per student
             }
+            socket.quizzes = [];
         }
     });
 
-    // TODO leave lecture
     socket.on("participate_lecture", async (data) => {
         if (socket.user_role == "student") {
             var nonactive_room = socket.course_id + "-" + data.lecture_id;
@@ -230,11 +231,27 @@ io.on("connection", socket => {
                 socket.gradebook.students.add(student_id);
                 socket.gradebook.attendance += 1;
                 socket.gradebook.in_class += 1;
-                socket.to(socket_id).emit("lecture_status", {quizzes: []});
+                // socket.to(socket_id).emit("lecture_status", {quizzes: []});
                 socket.emit("student_in_session", {total_student: socket.gradebook.in_class});
-            } else {
-                socket.to(socket_id).emit("lecture_status", {quizzes: ['TODO']});
+            } 
+
+            var past_quizzes = [];
+            for (var i=0; i<socket.quizzes.length; i++) {
+                quiz_id = socket.quizzes[i].id;
+                if (socket.quizzes[i].include == true) {
+                    var edited_quiz = JSON.parse(JSON.stringify(socket.quizzes[i]));
+                    
+                    if ( student_id in socket.gradebook.student_answers[quiz_id] ) {
+                        edited_quiz["student_answer"] = socket.gradebook.student_answers[quiz_id][student_id];
+                    } else {
+                        edited_quiz["student_answer"] = null;
+                    }
+                    edited_quiz["correct_answer"] = null;
+                    past_quizzes.push(edited_quiz);
+                }
             }
+            socket.to(socket_id).emit("lecture_status", {quizzes: past_quizzes});
+            
         }
     });
 
@@ -302,8 +319,9 @@ io.on("connection", socket => {
                     socket.quizzes[quiz_index]["time_duration"] = course.lectures[lecture_index].quizzes[quiz_index]
                     .time_duration;
                     socket.quizzes[quiz_index]["live"] = true;
+                    socket.quizzes[quiz_index]["answer_shown"] = false;
+                    socket.quizzes[quiz_index]["include"] = true;
                     var quiz = JSON.parse(JSON.stringify(socket.quizzes[quiz_index]));
-                    quiz["answer_shown"] = false;
                     quiz["student_answer"] = null;
                     quiz["correct_answer"] = null;
 
@@ -311,9 +329,17 @@ io.on("connection", socket => {
                         total_participants: 0,
                         answers: {}
                     }
+                    var raw_stat = socket.gradebook.statistics[quiz_id];
+                    var total = raw_stat["total_participants"];
+                    statistic["total_participants"] = total;
                     for ([answer, count] of Object.entries(socket.gradebook.statistics[quiz_id])) {
                         if(answer != "total_participants") {
-                            var percent = 0;
+                            var percent;
+                            if (total == 0) {
+                                percent = 0;
+                            } else {
+                                percent = Math.trunc((count/total)*100);
+                            }
                             var a_ascii = 65;
                             var answer_letter = String.fromCharCode(parseInt(answer) + a_ascii);
                             statistic["answers"][answer_letter] = percent.toString();
@@ -326,8 +352,6 @@ io.on("connection", socket => {
                     async function tick() {
                         io.to(active_room).emit("tick", { time_duration: socket.quizzes[quiz_index]["time_duration"], quiz_id: quiz_id});
                         if (socket.quizzes[quiz_index]["time_duration"] <= 0) {
-                            // TODO save 0 to database
-                            // question is live false
                             clearInterval(socket.intervalHandle);
                             var quiz = {
                                 quiz_id: socket.quizzes[quiz_index].id,
@@ -374,22 +398,9 @@ io.on("connection", socket => {
 
                         course.lectures[i].quizzes[quiz_index].time_duration = new_dur;
                         
-                        // var quiz = {
-                        //     question: quizzes[quiz_index].question,
-                        //     id: quizzes[quiz_index].id,
-                        //     quiz_index: quiz_index, 
-                        //     live: true,
-                        //     answer_shown: false,
-                        //     time_duration: new_dur,
-                        //     answers: quizzes[quiz_index].answers,
-                        //     student_answer: null,
-                        //     correct_answer: null,
-                        // }
-
                         socket.quizzes[quiz_index].time_duration = new_dur;
                         socket.to(active_room).emit("tick", { time_duration: socket.quizzes[quiz_index]["time_duration"], quiz_id: quiz_id});
                        
-                        
                         course.markModified('lectures');
                         course.save();  
                         break;
@@ -400,13 +411,10 @@ io.on("connection", socket => {
     });
 
     socket.on("answer_question", (data) => {
-        var active_room = data.course_id + "+" + data.lecture_id;
+        var active_room = socket.course_id + "+" + data.lecture_id;
         if (socket.user_role === "student") {
             var student_answer = {
                 user_id: socket.user_id,
-                course_id: data.course_id,
-                lecture_id: data.lecture_id,
-                quiz_id: data.quiz_id,
                 quiz_answer: data.quiz_answer,
             }
             socket.to(active_room).emit("new_answer", student_answer);
@@ -415,68 +423,65 @@ io.on("connection", socket => {
 
     socket.on("record_answer", (data) => {
         if (socket.user_role === "professor") {
-            var user_id = data.user_id;
-            var course_id = data.course_id;
-            var lecture_id = data.lecture_id;
+            var student_id = data.user_id;
             var quiz_id = data.quiz_id;
             var quiz_answer = data.quiz_answer;
-            if ( (course_id == socket.gradebook.course_id) && (lecture_id == socket.gradebook.lecture_id) ) {
-                if ( !(user_id in socket.gradebook.student_answers[quiz_id]) ){
+            var quiz_index;
+            for (var i=0; i<socket.quizzes.length; i++) {
+                if (socket.quizzes[i].id == data.quiz_id) {
+                    quiz_index = i;
+                    break;
+                }
+            }
+
+            if ( socket.quizzes[quiz_index].live == true ) {
+                if ( !(student_id in socket.gradebook.student_answers[quiz_id]) ){
                     socket.gradebook.statistics[quiz_id].total_participants += 1;
                 } else {
-                    var old_answer = socket.gradebook.student_answers[quiz_id][user_id];
+                    var old_answer = socket.gradebook.student_answers[quiz_id][student_id];
                     socket.gradebook.statistics[quiz_id][old_answer] -= 1
                 }
                 socket.gradebook.statistics[quiz_id][quiz_answer] += 1;
-                socket.gradebook.student_answers[quiz_id][user_id] = quiz_answer;
-            }
-            var statistic = {
-                total_participants: 0,
-                answers: {}
-            }
-            var raw_stat = socket.gradebook.statistics[quiz_id];
-            var total = raw_stat["total_participants"];
-            statistic["total_participants"] = total;
-            for ([answer, count] of Object.entries(raw_stat)) {
-                if(answer != "total_participants") {
-                    var percent = Math.trunc((count/total)*100);
-                    var a_ascii = 65;
-                    var answer_letter = String.fromCharCode(parseInt(answer) + a_ascii);
-                    statistic["answers"][answer_letter] = percent.toString();
+                socket.gradebook.student_answers[quiz_id][student_id] = quiz_answer;
+            
+                var statistic = {
+                    total_participants: undefined,
+                    answers: {}
                 }
-            }
-            socket.emit("new_statistic", statistic);
+                var raw_stat = socket.gradebook.statistics[quiz_id];
+                var total = raw_stat["total_participants"];
+                statistic["total_participants"] = total;
+                for ([answer, count] of Object.entries(raw_stat)) {
+                    if(answer != "total_participants") {
+                        var percent = Math.trunc((count/total)*100);
+                        var a_ascii = 65;
+                        var answer_letter = String.fromCharCode(parseInt(answer) + a_ascii);
+                        statistic["answers"][answer_letter] = percent.toString();
+                    }
+                }
+                socket.emit("new_statistic", statistic);
+            } 
         }
     });
 
     socket.on("show_answer", async (data) => {
-        var active_room = data.course_id + "+" + data.lecture_id;
-        var course_id = data.course_id;
-        var lecture_id = data.lecture_id;
-        var quiz_id = data.quiz_id;
-        var course = await Course.findById(course_id);
+        var active_room = socket.course_id + "+" + socket.gradebook.lecture_id;
+        var course = await Course.findById(socket.course_id);
         var correct_answer;
         if (course.instructor_id == socket.user_id) {
-            for(var i=0; i<course.lectures.length; i++){
-                if ( course.lectures[i].id == data.lecture_id) {
-                    quizzes = course.lectures[i].quizzes;
-                    for (var j=0; j<quizzes.length; j++) {
-                        if (quizzes[j].id == quiz_id) {
-                            correct_answer = quizzes[j].correct_answer;
-                        }
-                        break;
-                    }
+            for (var i=0; i<socket.quizzes.length; i++) {
+                if ( socket.quizzes[i].id == data.quiz_id) {
+                    correct_answer = socket.quizzes[i].correct_answer;
+                    socket.quizzes[i].answer_shown = true;
                     break;
                 }
             }
+            var quiz_answer = {
+                quiz_id: data.quiz_id,
+                correct_answer: correct_answer
+            }
+            socket.to(active_room).emit("answer_opened", quiz_answer);
         }
-        var quiz_answer = {
-            course_id,
-            lecture_id,
-            quiz_id,
-            correct_answer
-        }
-        socket.to(active_room).emit("answer_opened", quiz_answer);
     });
 
     socket.on("close_question", async (data) => {
@@ -495,14 +500,11 @@ io.on("connection", socket => {
                                 break;
                             }
                         }
-                        // course.lectures[i].quizzes[quiz_index].time_duration = 0;
                         socket.quizzes[quiz_index].time_duration = 0;
                         break;
                     }
                 }
-                // TODO: edit gradebook
-                // course.markModified('lectures');
-                // course.save();      
+                // TODO: edit gradebook     
 
             } 
         }
