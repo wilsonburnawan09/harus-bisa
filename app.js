@@ -276,15 +276,13 @@ io.on("connection", socket => {
         socket.emit("current_quiz", {quiz: quiz});
     });
 
-    socket.on("start_question", (data) => {
+    socket.on("start_question", async (data) => {
         var active_room = socket.course_id + "+" + socket.gradebook.lecture_id;
         var quiz_id = data.quiz_id;
         var quiz_index = 0;
         var lecture_index = 0;
-        console.log('hey');
         if (socket.user_role == "professor" && socket.active_rooms.has(active_room)){
-            console.log('hm')
-                var course = Course.findById(socket.course_id)
+                var course = await Course.findById(socket.course_id);
                 if (course.instructor_id == socket.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
                         if ( course.lectures[i].id == socket.gradebook.lecture_id) {
@@ -303,7 +301,6 @@ io.on("connection", socket => {
                     }
                     socket.quizzes[quiz_index]["time_duration"] = course.lectures[lecture_index].quizzes[quiz_index]
                     .time_duration;
-                    console.log('hey ',  socket.quizzes[quiz_index]["time_duration"])
                     socket.quizzes[quiz_index]["live"] = true;
                     var quiz = JSON.parse(JSON.stringify(socket.quizzes[quiz_index]));
                     quiz["answer_shown"] = false;
@@ -326,7 +323,7 @@ io.on("connection", socket => {
                     socket.to(active_room).emit("new_question", {quiz: quiz});
                     socket.emit("question_is_live", {live: true});
                     
-                    function tick() {
+                    async function tick() {
                         io.to(active_room).emit("tick", { time_duration: socket.quizzes[quiz_index]["time_duration"], quiz_id: quiz_id});
                         if (socket.quizzes[quiz_index]["time_duration"] <= 0) {
                             // TODO save 0 to database
@@ -338,7 +335,7 @@ io.on("connection", socket => {
                             }
                             io.to(active_room).emit("question_is_live", quiz);
                             socket.quizzes[quiz_index]["live"] = false;
-                            var course = Course.findById(socket.course_id);
+                            var course = await Course.findById(socket.course_id);
                             course.lectures[lecture_index].quizzes[quiz_index].time_duration = 0;
                             course.markModified("lectures");
                             course.save();
@@ -375,7 +372,7 @@ io.on("connection", socket => {
                             new_dur = 0;
                         }
 
-                        // course.lectures[i].quizzes[quiz_index].time_duration = new_dur;
+                        course.lectures[i].quizzes[quiz_index].time_duration = new_dur;
                         
                         // var quiz = {
                         //     question: quizzes[quiz_index].question,
@@ -393,8 +390,8 @@ io.on("connection", socket => {
                         socket.to(active_room).emit("tick", { time_duration: socket.quizzes[quiz_index]["time_duration"], quiz_id: quiz_id});
                        
                         
-                        // course.markModified('lectures');
-                        // course.save();  
+                        course.markModified('lectures');
+                        course.save();  
                         break;
                     }
                 }          
@@ -499,7 +496,7 @@ io.on("connection", socket => {
                             }
                         }
                         // course.lectures[i].quizzes[quiz_index].time_duration = 0;
-                        socket.quizzes[quiz_index].time_duration = new_dur;
+                        socket.quizzes[quiz_index].time_duration = 0;
                         break;
                     }
                 }
