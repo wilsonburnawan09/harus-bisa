@@ -428,7 +428,7 @@ io.on("connection", socket => {
     socket.on("record_answer", (data) => {
         console.log('hey')
         if (socket.user_role == "professor") {
-            console.log('professor')
+            console.log(data);
             var student_id = data.user_id;
             var quiz_id = data.quiz_id;
             var quiz_answer = data.quiz_answer;
@@ -441,7 +441,7 @@ io.on("connection", socket => {
                 }
             }
             console.log(data.quiz_id);
-
+            console.log('huah')
             console.log(quiz_index);
             console.log(socket.quizzes)
             console.log(socket.quizzes[quiz_index])
