@@ -419,6 +419,7 @@ io.on("connection", socket => {
             var student_answer = {
                 user_id: socket.user_id,
                 quiz_answer: data.quiz_answer,
+                quiz_id: data.quiz_id
             }
             socket.to(active_room).emit("new_answer", student_answer);
             console.log(student_answer)
