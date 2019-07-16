@@ -439,7 +439,10 @@ io.on("connection", socket => {
                     break;
                 }
             }
-
+            console.log(quiz_index);
+            console.log(socket.quizzes)
+            console.log(socket.quizzes[quiz_index])
+            console.log(socket.quizzes[quiz_index].live)
             if ( socket.quizzes[quiz_index].live == true ) {
                 console.log('live');
                 if ( !(student_id in socket.gradebook.student_answers[quiz_id]) ){
