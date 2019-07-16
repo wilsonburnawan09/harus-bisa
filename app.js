@@ -413,7 +413,6 @@ io.on("connection", socket => {
     });
 
     socket.on("answer_question", (data) => {
-        console.log('answer_question')
         var active_room = socket.course_id + "+" + data.lecture_id;
         if (socket.user_role === "student") {
             var student_answer = {
@@ -422,33 +421,22 @@ io.on("connection", socket => {
                 quiz_id: data.quiz_id
             }
             socket.to(active_room).emit("new_answer", student_answer);
-            console.log(student_answer)
         }
     });
 
     socket.on("record_answer", (data) => {
-        console.log('hey')
         if (socket.user_role == "professor") {
-            console.log(data);
             var student_id = data.user_id;
             var quiz_id = data.quiz_id;
             var quiz_answer = data.quiz_answer;
             var quiz_index;
             for (var i=0; i<socket.quizzes.length; i++) {
                 if (socket.quizzes[i].id == data.quiz_id) {
-                    console.log('hey')
                     quiz_index = i;
                     break;
                 }
             }
-            console.log(data.quiz_id);
-            console.log('huah')
-            console.log(quiz_index);
-            console.log(socket.quizzes)
-            console.log(socket.quizzes[quiz_index])
-            console.log(socket.quizzes[quiz_index].live)
             if ( socket.quizzes[quiz_index].live == true ) {
-                console.log('live');
                 if ( !(student_id in socket.gradebook.student_answers[quiz_id]) ){
                     socket.gradebook.statistics[quiz_id].total_participants += 1;
                 } else {
@@ -474,7 +462,6 @@ io.on("connection", socket => {
                     }
                 }
                 socket.emit("new_statistic", statistic);
-                console.log(statistic);
             } 
         }
     });
