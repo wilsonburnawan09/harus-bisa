@@ -424,7 +424,9 @@ io.on("connection", socket => {
     });
 
     socket.on("record_answer", (data) => {
-        if (socket.user_role === "professor") {
+        console.log('hey')
+        if (socket.user_role == "professor") {
+            console.log('professor')
             var student_id = data.user_id;
             var quiz_id = data.quiz_id;
             var quiz_answer = data.quiz_answer;
@@ -437,6 +439,7 @@ io.on("connection", socket => {
             }
 
             if ( socket.quizzes[quiz_index].live == true ) {
+                console.log('live');
                 if ( !(student_id in socket.gradebook.student_answers[quiz_id]) ){
                     socket.gradebook.statistics[quiz_id].total_participants += 1;
                 } else {
