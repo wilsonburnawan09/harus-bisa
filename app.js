@@ -414,7 +414,7 @@ io.on("connection", socket => {
 
     socket.on("answer_question", (data) => {
         console.log('answer_question')
-        var active_room = socket.course_id + "+" + data.gradebook.lecture_id;
+        var active_room = socket.course_id + "+" + data.lecture_id;
         if (socket.user_role === "student") {
             var student_answer = {
                 user_id: socket.user_id,
