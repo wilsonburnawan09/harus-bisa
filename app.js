@@ -413,6 +413,7 @@ io.on("connection", socket => {
     });
 
     socket.on("answer_question", (data) => {
+        console.log('answer_question')
         var active_room = socket.course_id + "+" + data.lecture_id;
         if (socket.user_role === "student") {
             var student_answer = {
@@ -420,6 +421,7 @@ io.on("connection", socket => {
                 quiz_answer: data.quiz_answer,
             }
             socket.to(active_room).emit("new_answer", student_answer);
+            console.log(student_answer)
         }
     });
 
