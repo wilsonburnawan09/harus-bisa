@@ -396,13 +396,15 @@ io.on("connection", socket => {
                             new_dur = 0;
                         }
 
-                        course.lectures[i].quizzes[quiz_index].time_duration = new_dur;
+                        // course.lectures[i].quizzes[quiz_index].time_duration = new_dur;
                         
                         socket.quizzes[quiz_index].time_duration = new_dur;
                         socket.to(active_room).emit("tick", { time_duration: socket.quizzes[quiz_index]["time_duration"], quiz_id: quiz_id});
-                       
-                        course.markModified('lectures');
-                        course.save();  
+
+                        var field_query = "lectures."+i.toString()+".quizzes."+quiz_index.toString()+".time_duration" 
+                        console.log(field_query);
+                        // course.markModified('lectures');
+                        Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: new_dur}}, {new:true});
                         break;
                     }
                 }          
@@ -460,6 +462,7 @@ io.on("connection", socket => {
                     }
                 }
                 socket.emit("new_statistic", statistic);
+                console.log(statistic);
             } 
         }
     });
