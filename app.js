@@ -435,10 +435,13 @@ io.on("connection", socket => {
             var quiz_index;
             for (var i=0; i<socket.quizzes.length; i++) {
                 if (socket.quizzes[i].id == data.quiz_id) {
+                    console.log('hey')
                     quiz_index = i;
                     break;
                 }
             }
+            console.log(data.quiz_id);
+
             console.log(quiz_index);
             console.log(socket.quizzes)
             console.log(socket.quizzes[quiz_index])
