@@ -214,7 +214,7 @@ io.on("connection", socket => {
                     }
                 }
                 var field_query = "lectures." + lecture_index.toString() + ".live"; 
-                Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: false}});
+                Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: false}}).exec();
 
                 var data = {
                     lecture_id: data.lecture_id,
