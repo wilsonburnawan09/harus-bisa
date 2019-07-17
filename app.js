@@ -197,6 +197,32 @@ io.on("connection", socket => {
                 student_answers: {} // per student
             }
             socket.quizzes = [];
+        } else if (socket.gradebook.lecture_id == null) {
+            var nonactive_room = socket.course_id + "-" + data.lecture_id;
+            var course = await Course.findById(socket.course_id);
+            if (course.instructor_id == socket.user_id) {
+                var lecture_index;
+                var date;
+                for (var i=0; i<course.lectures.length; i++){
+                    if (course.lectures[i].id == data.lecture_id) {
+                        date = course.lectures[i].date;
+                        lecture_index = i;
+                        break;
+                    }
+                }
+                var field_query = "lectures." + lecture_index.toString() + ".live"; 
+                Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: false}});
+
+                var data = {
+                    lecture_id: data.lecture_id,
+                    live: false,
+                    date: date
+                }
+
+                socket.leave(active_room);
+                io.to(nonactive_room).emit("lecture_is_live", data);
+                socket.active_rooms.delete(active_room);
+            }
         }
     });
 
@@ -395,16 +421,12 @@ io.on("connection", socket => {
                         if (data.new_duration < 0) {
                             new_dur = 0;
                         }
-
-                        // course.lectures[i].quizzes[quiz_index].time_duration = new_dur;
                         
                         socket.quizzes[quiz_index].time_duration = new_dur;
                         socket.to(active_room).emit("tick", { time_duration: socket.quizzes[quiz_index]["time_duration"], quiz_id: quiz_id});
 
                         var field_query = "lectures."+i.toString()+".quizzes."+quiz_index.toString()+".time_duration" 
-                        console.log(field_query);
-                        // course.markModified('lectures');
-                        Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: new_dur}}, {new:true});
+                        Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: new_dur}});
                         break;
                     }
                 }          
