@@ -541,8 +541,7 @@ io.on("connection", socket => {
 
     socket.on("close_question", async (data) => {
         var active_room = socket.course_id + "+" + socket.gradebook.lecture_id;
-        // if (socket.user_role == "professor" && socket.active_rooms.has(active_room)) {
-        if (true) {
+        if (socket.user_role == "professor" && socket.active_rooms.has(active_room)) {
             var course = await Course.findById(socket.course_id);
             var quiz_id = data.quiz_id;
             var lecture_id = socket.gradebook.lecture_id;
@@ -563,8 +562,6 @@ io.on("connection", socket => {
                         break;
                     }
                 }
-                // TODO: edit gradebook    
-                var participants = socket.gradebook.statistics[quiz_id].total_participants;
                 var student_answers = socket.gradebook.student_answers[quiz_id];
                 var update_queries = {};
                 for (var [user_id, answer] of Object.entries(student_answers)){
