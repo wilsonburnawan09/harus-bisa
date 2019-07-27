@@ -198,6 +198,7 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
             time_duration: time_duration,
             point: point,
             include: false,
+            participants: 0
         };
 
         Course.findByIdAndUpdate(req.params.course_id, {$push: {"lectures.$[i].quizzes": quiz}}, {arrayFilters: [{"i.id": Number(req.params.lecture_id)}], new: true, projection: {course_gradebook: 0}}, function(err, course){

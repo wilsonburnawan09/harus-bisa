@@ -23,7 +23,10 @@ var courseController = require('./controller/courseController');
 app.use('/api/courses', courseController);
 
 var lectureController = require('./controller/lectureController');
-app.use('/api/courses/:course_id/lectures', lectureController)
+app.use('/api/courses/:course_id/lectures', lectureController);
+
+var gradebookController = require('./controller/gradebookController');
+app.use('/api/gradebook', gradebookController);
 
 var http = require("http");
 var server = http.createServer(app);
@@ -101,6 +104,33 @@ io.on("connection", socket => {
         console.log("");
     });
 
+    socket.on("force_info", ()=> {
+        socket.gradebook = { 
+            course_id: '5c732d072b2b6b2dd830a2cb',
+            lecture_id: 19,
+            in_class: 2,
+            attendance: 2,
+            students: new Set([ '5c71fac26e1b79404c874c77', '5c71fb046e1b79404c874c78']),
+            statistics: { 
+                '0': { '0': 2, '1': 0, '2': 0, total_participants: 2 },
+                '1': { '0': 0, '1': 0, '2': 0, total_participants: 0 },
+                '2': { '0': 1, '1': 1, '2': 0, total_participants: 2 }
+            },
+            student_answers: { 
+                '0': { 
+                    '5c71fb046e1b79404c874c78': 0, 
+                    '5c71fac26e1b79404c874c77': 0 
+                },
+                '1': {},
+                '2': { 
+                    '5c71fac26e1b79404c874c77': 0, 
+                    '5c71fb046e1b79404c874c78': 1 
+                } 
+            } 
+        }
+        console.log("forced!");
+    });
+
     socket.on("start_lecture", async (data) => {
         var nonactive_room = socket.course_id + "-" + data.lecture_id;
         var active_room = socket.course_id + "+" + data.lecture_id;
@@ -108,11 +138,16 @@ io.on("connection", socket => {
         if (socket.user_role == "professor" && socket.nonactive_rooms.has(nonactive_room) && socket.gradebook.lecture_id == null) {
             var course = await Course.findById(socket.course_id);
             if (course.instructor_id == socket.user_id) {
+                var lecture_index;
                 for (var i=0; i<course.lectures.length; i++){
                     if (course.lectures[i].id == data.lecture_id) {
-                        course.lectures[i].has_lived = true;
-                        course.lectures[i].live = true;
-                        course.lectures[i].attendance = 0;
+                        lecture_index = i;
+                        var live_field_query = "lectures." + lecture_index.toString() + ".live";
+                        var attendace_field_query =  "lectures." + lecture_index.toString() + ".attendance";
+                        var has_lived_field_query = "lectures." + lecture_index.toString() + ".has_lived";
+
+                        Course.findByIdAndUpdate(socket.course_id, {$set: {[live_field_query]: true, [has_lived_field_query]: true,[attendace_field_query]: 0}}).exec();
+
                         lecture = course.lectures[i];
                         break;
                     }
@@ -124,11 +159,10 @@ io.on("connection", socket => {
                             quiz_answers: {}
                         }
                         course.course_gradebook.get(user_id).lecture_grades[data.lecture_id] = lecture_grade;
+                        var field_query = "course_gradebook." + user_id + ".lecture_grades." + data.lecture_id.toString(); 
+                        Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: lecture_grade}}).exec();
                     }
                 });
-                course.markModified("lectures");
-                course.markModified("course_gradebook");
-                course.save();
 
                 data = {
                     lecture_id: data.lecture_id,
@@ -236,9 +270,8 @@ io.on("connection", socket => {
             if (socket.nonactive_rooms.has(nonactive_room) && (active_room in io.sockets.adapter.rooms)) {
                 var course = await Course.findById(socket.course_id);
                 if (course.course_gradebook.has(socket.user_id)) {
-                    course.course_gradebook.get(socket.user_id).lecture_grades[data.lecture_id].present = true;
-                    course.markModified('course_gradebook');
-                    course.save();
+                    var field_query = "course_gradebook." + socket.user_id + ".lecture_grades." + data.lecture_id.toString() + ".present"; 
+                    Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: true}}).exec();
 
                     socket.join(active_room);
                     socket.active_rooms.add(active_room);
@@ -260,7 +293,6 @@ io.on("connection", socket => {
                 socket.gradebook.students.add(student_id);
                 socket.gradebook.attendance += 1;
                 socket.gradebook.in_class += 1;
-                // socket.to(socket_id).emit("lecture_status", {quizzes: []});
                 socket.emit("student_in_session", {total_student: socket.gradebook.in_class});
             } 
 
@@ -339,9 +371,8 @@ io.on("connection", socket => {
                                     break;
                                 }
                             }
-                            course.lectures[i].quizzes[quiz_index].include = true;
-                            course.markModified("lectures");
-                            course.save();
+                            var field_query = "lectures." + lecture_index.toString() + ".quizzes." +  quiz_index.toString() + ".include"; 
+                            Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: true}}).exec();
                             break;
                         }
                     }
@@ -388,10 +419,8 @@ io.on("connection", socket => {
                             }
                             io.to(active_room).emit("question_is_live", quiz);
                             socket.quizzes[quiz_index]["live"] = false;
-                            var course = await Course.findById(socket.course_id);
-                            course.lectures[lecture_index].quizzes[quiz_index].time_duration = 0;
-                            course.markModified("lectures");
-                            course.save();
+                            var field_query = "lectures." + lecture_index.toString() + ".quizzes." +  quiz_index.toString() + ".time_duration"; 
+                            Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: 0}}).exec();
                             return;
                         }
                         socket.quizzes[quiz_index]["time_duration"] -= 1;
@@ -399,7 +428,6 @@ io.on("connection", socket => {
 
                     socket.intervalHandle = setInterval(tick, 1000);
                 }
-            
         }
     });
 
@@ -513,13 +541,17 @@ io.on("connection", socket => {
 
     socket.on("close_question", async (data) => {
         var active_room = socket.course_id + "+" + socket.gradebook.lecture_id;
-        if (socket.user_role == "professor" && socket.active_rooms.has(active_room)) {
+        // if (socket.user_role == "professor" && socket.active_rooms.has(active_room)) {
+        if (true) {
             var course = await Course.findById(socket.course_id);
             var quiz_id = data.quiz_id;
+            var lecture_id = socket.gradebook.lecture_id;
+            var lecture_index;
             if (course.instructor_id == socket.user_id) {
                 for(var i=0; i<course.lectures.length; i++){
                     if ( course.lectures[i].id == socket.gradebook.lecture_id) {
                         var quizzes = course.lectures[i].quizzes;
+                        lecture_index = i;
                         var quiz_index = 0;
                         for (var j=0; j<quizzes.length; j++) {
                             if (quizzes[j].id == quiz_id) {
@@ -531,18 +563,32 @@ io.on("connection", socket => {
                         break;
                     }
                 }
-                // TODO: edit gradebook     
+                // TODO: edit gradebook    
+                var participants = socket.gradebook.statistics[quiz_id].total_participants;
+                var student_answers = socket.gradebook.student_answers[quiz_id];
+                var update_queries = {};
+                for (var [user_id, answer] of Object.entries(student_answers)){
+                    var field_query = "course_gradebook." + user_id + ".lecture_grades." + lecture_id.toString() + ".quiz_answers." + quiz_id.toString();
+                    update_queries[field_query] = answer;
+                }
 
+                var attendace_field_query =  "lectures." + lecture_index.toString() + ".attendance";
+                update_queries[attendace_field_query] = socket.gradebook.attendance;
+
+                Course.findByIdAndUpdate(socket.course_id, {$set: update_queries}).exec();
             } 
         }
     });
 
     socket.on("disconnect", async () => {
         console.log("user ", socket.user_id, " ", socket.user_role, " is disconnected");
-        if (socket.user_role === "professor") {
+        if (socket.user_role == "professor") {
             var connected_lectures = socket.active_rooms.entries();
-            for (var room of connected_lectures){
-                var cleaned_room = room[0];
+            for (var [room, room] of connected_lectures){  
+                io.of('/').in(room).clients( (err, clients) => {
+                    console.log(clients);
+                }); 
+                var cleaned_room = room;
                 var split_pos = 0;
                 for( var i=0; i<cleaned_room.length; i++) {
                     if (cleaned_room.charAt(i) == '+') {
@@ -568,10 +614,11 @@ io.on("connection", socket => {
                             date,
                             lecture_id
                         }
-                        socket.to(room[0]).emit("lecture_is_live", data);
+                        socket.to(room).emit("lecture_is_live", data);
                     });
                 } 
             }
+
             
         }
     });
