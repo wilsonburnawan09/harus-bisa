@@ -262,4 +262,63 @@ router.get('/professor/courses/:course_id/students', verifyToken, async function
     });    
 });
 
+router.get('/student/courses/:course_id/lectures', verifyToken, async function(req,res,next){
+    if (req.role != "student") return res.status(401).send({ message: "Only students are allowed to see this page.", data: null});
+    Course.findById(req.params.course_id, async function(err, course){
+        if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+
+        var course_answers = course.course_gradebook.get(req.userId);
+        var getting_gradebook = course.lectures.map(async lecture_info => {
+            if (lecture_info.has_lived) {
+                var participation_reward = lecture_info.participation_reward_percentage;
+                var student_lecture_info = course_answers.lecture_grades[lecture_info.id];
+                var total_pts = 0;
+                var accuracy_pts = 0;
+                var participation_pts = 0;
+                var max_accuracy_pts = 0;
+                var max_participation_pts = 0;
+                lecture_info.quizzes.forEach(quiz => {
+                    if (quiz.include == true) {
+                        max_accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
+                        max_participation_pts += (participation_reward / 100) * quiz.point;
+                        if (student_lecture_info.present && student_lecture_info.quiz_answers[quiz.id] != undefined) {
+                            participation_pts += (participation_reward / 100) * quiz.point;
+                            if (student_lecture_info.quiz_answers[quiz.id] == quiz.correct_answer) {
+                                accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
+                            }
+                        }
+                    }
+                });
+                total_pts = (accuracy_pts+participation_pts) / (max_accuracy_pts+max_participation_pts) * 100;   
+
+
+                
+                
+                var lecture_gradebook = {
+                    "lecture_id": lecture_info.id,
+                    "date": lecture_info.date,
+                    "attendance": student_lecture_info.present,
+                    "average_score": total_pts.toFixed(2)
+                }
+                return lecture_gradebook;
+            }
+        });
+
+        return res.status(200).send({gradebooks: await Promise.all(getting_gradebook)});
+    });  
+});
+
+// {
+//     "gradebooks": [
+//       {
+//         "lecture_id": "string",
+//         "date": "string",
+//         "attendance": true,
+//         "average_score": "string"
+//       }
+//     ]
+//   }
+
+
 module.exports = router;
