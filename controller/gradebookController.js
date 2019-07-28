@@ -268,9 +268,9 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
                             "last_name": student.last_name,
                             "email": student.email,
                             "attendance" : student_lecture_info.present,
-                            "participation_average_score": participation_pts.toFixed(2),
-                            "accuracy_average_score": accuracy_pts.toFixed(2),
-                            "total_average_score": total_pts.toFixed(2),
+                            "participation_average_score": any_included ? participation_pts.toFixed(2) : '-',
+                            "accuracy_average_score": any_included ? accuracy_pts.toFixed(2) : '-',
+                            "total_average_score": any_included ? total_pts.toFixed(2) : '-',
                         }
                         lecture_gradebooks.gradebooks_by_students.push(student_gradebook);
                     }
