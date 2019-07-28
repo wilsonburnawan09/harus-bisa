@@ -8,6 +8,9 @@ var Course = require('../model/Course');
 var verifyToken = require('./auth/verifyTokenMiddleware');
 
 async function get_class_average(course) { 
+    if (course.lectures.length() == 0) {
+        return '-';
+    }
     var lecture_counter = 0;
     var getting_lectures_average = course.lectures.map(lecture_info => {
         if (lecture_info.has_lived) {
