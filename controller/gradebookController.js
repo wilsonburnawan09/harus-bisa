@@ -366,9 +366,9 @@ router.get('/professor/courses/:course_id/students', verifyToken, async function
                 first_name: student_info.first_name,
                 last_name: student_info.last_name,
                 email: student_info.email,
-                participation_average_score: (student_info.total_participation_score/lecture_counter).toFixed(2),
-                accuracy_average_score :(student_info.total_accuracy_score/lecture_counter).toFixed(2),
-                total_average_score: (student_info.total_score/lecture_counter).toFixed(2)
+                participation_average_score: lecture_counter != 0 ? (student_info.total_participation_score/lecture_counter).toFixed(2) : '-',
+                accuracy_average_score : lecture_counter != 0 ? (student_info.total_accuracy_score/lecture_counter).toFixed(2) : '-',
+                total_average_score: lecture_counter != 0 ? (student_info.total_score/lecture_counter) .toFixed(2) : '-'
             }
             return student_obj; 
         });
