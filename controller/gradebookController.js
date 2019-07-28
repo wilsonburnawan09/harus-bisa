@@ -78,8 +78,10 @@ router.get('/professor/courses/:course_id/lectures/:lecture_id/students', verify
                 var participation_pts = 0;
                 var max_accuracy_pts = 0;
                 var max_participation_pts = 0;
+                var any_included = false;
                 lecture_info.quizzes.forEach(quiz => {
                     if (quiz.include == true) {
+                        any_included = true;
                         max_accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
                         max_participation_pts += (participation_reward / 100) * quiz.point;
                         if (student_lecture_info.present && student_lecture_info.quiz_answers[quiz.id] != undefined) {
@@ -96,9 +98,9 @@ router.get('/professor/courses/:course_id/lectures/:lecture_id/students', verify
                     "last_name": student.last_name,
                     "email": student.email,
                     "attendance" : student_lecture_info.present,
-                    "participation_average_score": participation_pts.toFixed(2),
-                    "accuracy_average_score": accuracy_pts.toFixed(2),
-                    "total_average_score": total_pts.toFixed(2),
+                    "participation_average_score": any_included ? participation_pts.toFixed(2) : '-',
+                    "accuracy_average_score": any_included ? accuracy_pts.toFixed(2) : '-',
+                    "total_average_score": any_included ? total_pts.toFixed(2) : '-',
                 }
                 lecture_gradebooks.gradebooks.push(student_gradebook);
             }
