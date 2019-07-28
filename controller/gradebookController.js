@@ -236,7 +236,7 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
                         "total_participants": quiz.include ? total_participants.toString() : '-',
                         "average_score": quiz.include ? (isNaN(average_score.toFixed(2)) ? '0.00' : average_score.toFixed(2)) : '-',
                     }
-                    lecture_gradebooks.gradebooks_by_students.push(quiz_gradebook);
+                    lecture_gradebooks.gradebooks_by_quizzes.push(quiz_gradebook);
                     quiz_number += 1;
                 });
                 for (var [user_id, course_answers] of course.course_gradebook.entries()){
