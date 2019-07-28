@@ -192,6 +192,7 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
                     }
                 }
             });
+            console.log(queries);
             Course.findByIdAndUpdate(req.params.course_id, {$set: {queries}}, {new: true}, async function(err, course){
                 if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
                 if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
