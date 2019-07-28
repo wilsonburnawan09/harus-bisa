@@ -270,11 +270,11 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
                             "accuracy_average_score": accuracy_pts.toFixed(2),
                             "total_average_score": total_pts.toFixed(2),
                         }
-                        lecture_gradebooks.gradebooks.push(student_gradebook);
+                        lecture_gradebooks.gradebooks_by_students.push(student_gradebook);
                     }
                 }
                 lecture_gradebooks["gradebooks"].sort((a,b) => (a.first_name > b.first_name) ? 1 : ((b.last_nom > a.last_nom) ? -1 : 0)); 
-                
+
                 return res.status(200).send(lecture_gradebooks);
             });
         }
