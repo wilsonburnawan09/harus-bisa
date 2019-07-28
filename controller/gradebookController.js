@@ -7,16 +7,58 @@ var User = require('../model/User');
 var Course = require('../model/Course');
 var verifyToken = require('./auth/verifyTokenMiddleware');
 
+async function get_class_average(course) { 
+    var lecture_counter = 0;
+    var getting_lectures_average = course.lectures.map(lecture_info => {
+        if (lecture_info.has_lived) {
+            var total_lecture_score = 0;
+            lecture_counter += 1;
+            var participation_reward = lecture_info.participation_reward_percentage;
+            for (var [user_id, course_answers] of course.course_gradebook.entries()){
+                if (course_answers.role == "student") {
+                    var student_lecture_info = course_answers.lecture_grades[lecture_info.id];
+                    var total_pts = 0;
+                    var accuracy_pts = 0;
+                    var participation_pts = 0;
+                    var max_accuracy_pts = 0;
+                    var max_participation_pts = 0;
+                    lecture_info.quizzes.forEach(quiz => {
+                        if (quiz.include == true) {
+                            max_accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
+                            max_participation_pts += (participation_reward / 100) * quiz.point;
+                            if (student_lecture_info.present && student_lecture_info.quiz_answers[quiz.id] != undefined) {
+                                participation_pts += (participation_reward / 100) * quiz.point;
+                                if (student_lecture_info.quiz_answers[quiz.id] == quiz.correct_answer) {
+                                    accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
+                                }
+                            }
+                        }
+                    });
+                    total_pts = (accuracy_pts+participation_pts) / (max_accuracy_pts+max_participation_pts) * 100;   
+                    total_lecture_score +=  total_pts;
+                }
+            } 
+            return (total_lecture_score/(course.course_gradebook.size-1));
+        } else {
+            return 0;
+        }
+    });
+    var lectures_total_score = await Promise.all(getting_lectures_average);
+    var lectures_average = (lectures_total_score.reduce((accum,value) => accum + value, 0)/lecture_counter).toFixed(2);
+    return lectures_average;
+}
+
 router.get('/professor/courses/:course_id/lectures/:lecture_id/students', verifyToken, async function(req,res,next){
     if (req.role != "professor") return res.status(401).send({ message: "Only professors are allowed to see this page.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
         if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
-        var lecture_gradebooks = {}
-        lecture_gradebooks["number_of_students"] = course.number_of_students;
-        lecture_gradebooks["class_average"] = "89.5"
-        lecture_gradebooks["gradebooks"] = []
+        var lecture_gradebooks = {
+            number_of_students: course.number_of_students,
+            class_average: await get_class_average(course),
+            gradebooks: []
+        }
         var lecture_info = null
         for (var i=0; i<course.lectures.length; i++){
             if (course.lectures[i].id == req.params.lecture_id) {
@@ -73,7 +115,7 @@ router.get('/professor/courses/:course_id/lectures/:lecture_id/quizzes', verifyT
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
         var lecture_gradebooks = {}
         lecture_gradebooks["number_of_students"] = course.number_of_students;
-        lecture_gradebooks["class_average"] = "89.5"
+        lecture_gradebooks["class_average"] = await get_class_average(course)
         lecture_gradebooks["gradebooks"] = []
         var lecture_info = null
         for (var i=0; i<course.lectures.length; i++){
@@ -125,10 +167,10 @@ router.get('/professor/courses/:course_id/lectures', verifyToken, async function
 
         var lecture_gradebooks = {
             "number_of_students": course.number_of_students,
-            "class_average": "89.5",
+            "class_average": await get_class_average(course),
             "gradebooks": []
         }
-        var getting_lectures = course.lectures.map(async lecture_info => {
+        var getting_lectures = course.lectures.map( lecture_info => {
             if (lecture_info.has_lived) {
                 var total_lecture_score = 0;
                 var participation_reward = lecture_info.participation_reward_percentage;
@@ -157,13 +199,19 @@ router.get('/professor/courses/:course_id/lectures', verifyToken, async function
                     }
                 } 
 
-                
-                
                 var lecture_gradebook = {
                     "lecture_id": lecture_info.id,
                     "date": lecture_info.date,
                     "attendance": lecture_info.attendance,
                     "total_average_score": (total_lecture_score/(course.course_gradebook.size-1)).toFixed(2)
+                }
+                return lecture_gradebook;
+            } else {
+                var lecture_gradebook = {
+                    "lecture_id": lecture_info.id,
+                    "date": lecture_info.date,
+                    "attendance": '-',
+                    "total_average_score": '-'
                 }
                 return lecture_gradebook;
             }
@@ -184,7 +232,7 @@ router.get('/professor/courses/:course_id/students', verifyToken, async function
 
         var lecture_gradebooks = {
             "number_of_students": course.number_of_students,
-            "class_average": "89.5",
+            "class_average": await get_class_average(course),
             "gradebooks": []
         }
 
@@ -269,7 +317,8 @@ router.get('/student/courses/:course_id/lectures', verifyToken, async function(r
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
 
         var course_answers = course.course_gradebook.get(req.userId);
-        var getting_gradebook = course.lectures.map(async lecture_info => {
+        var gradebooks = [];
+        course.lectures.forEach( lecture_info => {
             if (lecture_info.has_lived) {
                 var participation_reward = lecture_info.participation_reward_percentage;
                 var student_lecture_info = course_answers.lecture_grades[lecture_info.id];
@@ -292,33 +341,18 @@ router.get('/student/courses/:course_id/lectures', verifyToken, async function(r
                 });
                 total_pts = (accuracy_pts+participation_pts) / (max_accuracy_pts+max_participation_pts) * 100;   
 
-
-                
-                
                 var lecture_gradebook = {
                     "lecture_id": lecture_info.id,
                     "date": lecture_info.date,
                     "attendance": student_lecture_info.present,
                     "average_score": total_pts.toFixed(2)
                 }
-                return lecture_gradebook;
+                gradebooks.push(lecture_gradebook);
             }
         });
 
-        return res.status(200).send({gradebooks: await Promise.all(getting_gradebook)});
+        return res.status(200).send({gradebooks: gradebooks});
     });  
 });
-
-// {
-//     "gradebooks": [
-//       {
-//         "lecture_id": "string",
-//         "date": "string",
-//         "attendance": true,
-//         "average_score": "string"
-//       }
-//     ]
-//   }
-
 
 module.exports = router;
