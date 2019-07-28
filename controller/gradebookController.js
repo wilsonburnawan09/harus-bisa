@@ -147,7 +147,7 @@ router.get('/professor/courses/:course_id/lectures/:lecture_id/quizzes', verifyT
             }
             average_score = ((accuracy_pts+participation_pts)/(max_accuracy_pts+participation_pts))*100
             var quiz_gradebook = {
-                "quiz_numnber": quiz_number,
+                "quiz_number": quiz_number,
                 "quiz_id": quiz.id,
                 "question": quiz.question,
                 "include": quiz.include,
