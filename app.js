@@ -605,7 +605,7 @@ io.on("connection", socket => {
                             break;
                         }
                     }
-                    Course.findByIdAndUpdate(course_id, {$set: {"lectures.$[i].live": false}}, {arrayFilters: [{"i.id": Number(lecture_id)}]}, function(err, course) {
+                    Course.findByIdAndUpdate(course_id, {$set: {"lectures.$[i].live": false, "lectures.$[i].attendance": socket.gradebook.attendance}}, {arrayFilters: [{"i.id": Number(lecture_id)}]}, function(err, course) {
                         var data = {
                             live,
                             date,

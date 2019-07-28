@@ -155,7 +155,7 @@ router.get('/professor/courses/:course_id/lectures/:lecture_id/quizzes', verifyT
                 "question": quiz.question,
                 "include": quiz.include,
                 "total_participants": quiz.include ? total_participants.toString() : '-',
-                "average_score": quiz.include ? average_score.toFixed(2) : '-',
+                "average_score": quiz.include ? (isNaN(average_score.toFixed(2) ? '0' : average_score.toFixed(2))) : '-',
             }
             lecture_gradebooks.gradebooks.push(quiz_gradebook);
             quiz_number += 1;
