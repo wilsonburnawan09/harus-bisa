@@ -412,7 +412,7 @@ router.get('/student/courses/:course_id/lectures', verifyToken, async function(r
                     "lecture_id": lecture_info.id,
                     "date": lecture_info.date,
                     "attendance": student_lecture_info.present,
-                    "average_score": total_pts.toFixed(2)
+                    "average_score": student_lecture_info.present ? total_pts.toFixed(2) : '-'
                 }
                 gradebooks.push(lecture_gradebook);
             }
