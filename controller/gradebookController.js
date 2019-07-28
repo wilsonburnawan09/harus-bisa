@@ -183,11 +183,10 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
         if (lecture == undefined) {
             return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found.", data: null });
         } else {
-            var queries = {}
-            console.log(req.body.quizzes);
+            var queries = {};
             req.body.quizzes.forEach( quiz => {
                 for (var i=0; i<lecture.quizzes.length; i++){
-                    if (lecture.quizzes[i].id == quiz.id) {
+                    if (lecture.quizzes[i].id == quiz.quiz_id) {
                         var query = "lectures." + lecture_index + ".quizzes." + i + ".include";
                         console.log(query);
                         console.log("old: ", lecture.quizzes[i].id);
