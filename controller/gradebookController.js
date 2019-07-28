@@ -250,8 +250,10 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
                         var participation_pts = 0;
                         var max_accuracy_pts = 0;
                         var max_participation_pts = 0;
+                        var any_included = false;
                         lecture_info.quizzes.forEach(quiz => {
                             if (quiz.include == true) {
+                                any_included = true;
                                 max_accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
                                 max_participation_pts += (participation_reward / 100) * quiz.point;
                                 if (student_lecture_info.present && student_lecture_info.quiz_answers[quiz.id] != undefined) {
