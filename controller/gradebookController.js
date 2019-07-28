@@ -255,6 +255,7 @@ router.get('/professor/courses/:course_id/lectures', verifyToken, async function
                 var lecture_gradebook = {
                     "lecture_id": lecture_info.id,
                     "date": lecture_info.date,
+                    "participation_reward_percentage": lecture_info.participation_reward_percentage,
                     "attendance": '-',
                     "total_average_score": '-'
                 }
@@ -341,6 +342,7 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id', verifyToken, fu
                         var lecture_gradebook = {
                             "lecture_id": lecture_info.id,
                             "date": lecture_info.date,
+                            "participation_reward_percentage": lecture_info.participation_reward_percentage,
                             "attendance": '-',
                             "total_average_score": '-'
                         }
