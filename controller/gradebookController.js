@@ -171,56 +171,34 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
         if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
 
-        var lecture_info = null;
+        var lecture = undefined;
+        var lecture_index = undefined;
         for (var i=0; i<course.lectures.length; i++){
             if (course.lectures[i].id == req.params.lecture_id) {
-                lecture_info = course.lectures[i];
+                lecture = course.lectures[i];
+                lecture_index = i;
                 break;
             }
         }
-        if (lecture_info == null) return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found.", data: null });
-
-        var lecture_gradebooks = {}
-        lecture_gradebooks["number_of_students"] = course.number_of_students;
-        lecture_gradebooks["class_average"] = await get_class_average(course)
-        lecture_gradebooks["gradebooks"] = []
-        var lecture_info = null;
-        for (var i=0; i<course.lectures.length; i++){
-            if (course.lectures[i].id == req.params.lecture_id) {
-                lecture_info = course.lectures[i];
-                break;
-            }
-        }
-        if (lecture_info == null || lecture_info.has_lived == false) return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found or never started.", data: null });
-        var participation_reward = lecture_info.participation_reward_percentage;
-        lecture_info.quizzes.forEach(quiz => {
-            var total_participants = 0;
-            var average_score = 0;
-            var accuracy_pts = 0;
-            var participation_pts = 0;
-            var max_accuracy_pts = 0;
-            for (var [user_id, course_answers] of course.course_gradebook.entries()){
-                if (course_answers.role != "professor") {
-                    if (course_answers.lecture_grades[req.params.lecture_id].present && course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] != undefined) {
-                        if (course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] == quiz.correct_answer) {
-                            accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
-                        }
-                        total_participants += 1;
-                        participation_pts += (participation_reward/100) * quiz.point;
-                        max_accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
+        if (lecture == undefined) {
+            return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found.", data: null });
+        } else {
+            var queries = {}
+            req.body.quizzes.forEach( quiz => {
+                for (var i=0; i<lecture.quizzes.length; i++){
+                    if (lecture.quizzes[i].id == quiz.id) {
+                        var query = "lectures." + lecture_index + ".quizzes." + i + ".include";
+                        console.log(query);
+                        console.log("old: ", lecture.quizzes[i].id);
+                        console.log("new: ", quiz.include);
+                        queries[query] = quiz.include;
+                    } else {
+                        continue;
                     }
                 }
-            }
-            average_score = ((accuracy_pts+participation_pts)/(max_accuracy_pts+participation_pts))*100
-            var quiz_gradebook = {
-                "question": quiz.question,
-                "include": quiz.include,
-                "total_participants": quiz.include ? total_participants.toString() : '-',
-                "average_score": quiz.include ? average_score.toFixed(2) : '-',
-            }
-            lecture_gradebooks.gradebooks.push(quiz_gradebook);
-        });
-        return res.status(200).send(lecture_gradebooks);
+            });
+            res.status(200).send(queries);
+        }
     });
 });
 
@@ -309,7 +287,7 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id', verifyToken, fu
         }
 
         if (lecture_index == undefined) {
-            return res.status(500).send({ message: "Lecture id not found.", data: null});
+            return res.status(404).send({ message: "Lecture id not found.", data: null});
         } else {
             var query = "lectures." + lecture_index + ".participation_reward_percentage";
             Course.findByIdAndUpdate(req.params.course_id, {$set: {[query]: participation_reward_percentage}}, {new: true}, async function(err, course){
