@@ -30,16 +30,15 @@ app.use('/api/gradebook', gradebookController);
 
 var fs = require("fs");
 
-const options = {
-    key: fs.readFileSync("/etc/ssl/ec2-54-174-154-58.compute-1.amazonaws.com.key"),
-    cert: fs.readFileSync("/etc/ssl/certs/ec2-54-174-154-58.compute-1.amazonaws.com.crt")
-  };
+// const options = {
+//     key: fs.readFileSync("/etc/ssl/ec2-54-174-154-58.compute-1.amazonaws.com.key"),
+//     cert: fs.readFileSync("/etc/ssl/certs/ec2-54-174-154-58.compute-1.amazonaws.com.crt")
+//   };
 
-var https = require("https");
-var server = https.createServer(options, app);
-// var http = require("http");
-// var server = http.createServer(app);
-// var server = http.createServer(app);
+// var https = require("https");
+// var server = https.createServer(options, app);
+var http = require("http");
+var server = http.createServer(app);
 
 
 
