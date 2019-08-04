@@ -28,8 +28,20 @@ app.use('/api/courses/:course_id/lectures', lectureController);
 var gradebookController = require('./controller/gradebookController');
 app.use('/api/gradebook', gradebookController);
 
-var http = require("http");
-var server = http.createServer(app);
+var fs = require("fs");
+
+const options = {
+    key: fs.readFileSync("/etc/ssl/ec2-54-174-154-58.compute-1.amazonaws.com.key"),
+    cert: fs.readFileSync("/etc/ssl/certs/ec2-54-174-154-58.compute-1.amazonaws.com.crt")
+  };
+
+var https = require("https");
+var server = https.createServer(options, app);
+// var http = require("http");
+// var server = http.createServer(app);
+// var server = http.createServer(app);
+
+
 
 const io = require("socket.io")(server, {
     handlePreflightRequest: (req, res) => {
