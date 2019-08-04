@@ -38,7 +38,7 @@ async function get_class_average(course) {
                         }
                     });
                     total_pts = (accuracy_pts+participation_pts) / (max_accuracy_pts+max_participation_pts) * 100;   
-                    total_lecture_score +=  total_pts;
+                    total_lecture_score +=  isNaN(total_pts) ? 0 : total_pts;
                 }
             } 
             return (total_lecture_score/(course.course_gradebook.size-1));
@@ -47,7 +47,7 @@ async function get_class_average(course) {
         }
     });
     var lectures_total_score = await Promise.all(getting_lectures_average);
-    var lectures_average = (lectures_total_score.reduce((accum,value) => accum + value, 0)/lecture_counter).toFixed(2);
+    var lectures_average = lecture_counter == 0 ? '-' : (lectures_total_score.reduce((accum,value) => accum + value, 0)/lecture_counter).toFixed(2);
     return lectures_average;
 }
 
@@ -149,13 +149,14 @@ router.get('/professor/courses/:course_id/lectures/:lecture_id/quizzes', verifyT
                 }
             }
             average_score = ((accuracy_pts+participation_pts)/(max_accuracy_pts+participation_pts))*100
+            average_score = isNaN(average_score) ? '0.00' : average_score.toFixed(2)
             var quiz_gradebook = {
                 "quiz_number": quiz_number,
                 "quiz_id": quiz.id,
                 "question": quiz.question,
                 "include": quiz.include,
                 "total_participants": quiz.include ? total_participants.toString() : '-',
-                "average_score": quiz.include ? (isNaN(average_score.toFixed(2)) ? '0.00' : average_score.toFixed(2)) : '-',
+                "average_score": quiz.include ? average_score : '-',
             }
             lecture_gradebooks.gradebooks.push(quiz_gradebook);
             quiz_number += 1;
@@ -230,13 +231,14 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
                         }
                     }
                     average_score = ((accuracy_pts+participation_pts)/(max_accuracy_pts+participation_pts))*100
+                    average_score = isNaN(average_score) ? '0.00' : average_score.toFixed(2)
                     var quiz_gradebook = {
                         "quiz_number": quiz_number,
                         "quiz_id": quiz.id,
                         "question": quiz.question,
                         "include": quiz.include,
                         "total_participants": quiz.include ? total_participants.toString() : '-',
-                        "average_score": quiz.include ? (isNaN(average_score.toFixed(2)) ? '0.00' : average_score.toFixed(2)) : '-',
+                        "average_score": quiz.include ? average_score : '-',
                     }
                     lecture_gradebooks.gradebooks_by_quizzes.push(quiz_gradebook);
                     quiz_number += 1;
@@ -310,8 +312,10 @@ router.get('/professor/courses/:course_id/lectures', verifyToken, async function
                         var participation_pts = 0;
                         var max_accuracy_pts = 0;
                         var max_participation_pts = 0;
+                        var has_include = false;
                         lecture_info.quizzes.forEach(quiz => {
                             if (quiz.include == true) {
+                                has_include = true;
                                 max_accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
                                 max_participation_pts += (participation_reward / 100) * quiz.point;
                                 if (student_lecture_info.present && student_lecture_info.quiz_answers[quiz.id] != undefined) {
@@ -332,7 +336,7 @@ router.get('/professor/courses/:course_id/lectures', verifyToken, async function
                     "date": lecture_info.date,
                     "participation_reward_percentage": lecture_info.participation_reward_percentage,
                     "attendance": lecture_info.attendance,
-                    "total_average_score": (total_lecture_score/(course.course_gradebook.size-1)).toFixed(2)
+                    "total_average_score": has_include ? (total_lecture_score/(course.course_gradebook.size-1)).toFixed(2) : '-'
                 }
                 return lecture_gradebook;
             } else {
@@ -506,10 +510,13 @@ router.get('/professor/courses/:course_id/students', verifyToken, async function
                                 }
                             }
                         });
+                        var total_accuracy_score = (accuracy_pts/max_accuracy_pts) * 100;
+                        var total_participation_score = (participation_pts/max_participation_pts) * 100;
+                        var total_score = (accuracy_pts+participation_pts) / (max_accuracy_pts+max_participation_pts) * 100;
 
-                        gradebooks[user_id].total_accuracy_score += (accuracy_pts/max_accuracy_pts) * 100;
-                        gradebooks[user_id].total_participation_score += (participation_pts/max_participation_pts) * 100;
-                        gradebooks[user_id].total_score += (accuracy_pts+participation_pts) / (max_accuracy_pts+max_participation_pts) * 100;   
+                        gradebooks[user_id].total_accuracy_score += isNaN(total_accuracy_score) ? 0 : total_accuracy_score;
+                        gradebooks[user_id].total_participation_score += isNaN(total_participation_score) ? 0 : total_participation_score;
+                        gradebooks[user_id].total_score += isNaN(total_score) ? 0 : total_score; 
                     }
                 } 
             }
