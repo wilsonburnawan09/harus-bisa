@@ -28,19 +28,8 @@ app.use('/api/courses/:course_id/lectures', lectureController);
 var gradebookController = require('./controller/gradebookController');
 app.use('/api/gradebook', gradebookController);
 
-var fs = require("fs");
-
-// const options = {
-//     key: fs.readFileSync("/etc/ssl/ec2-54-174-154-58.compute-1.amazonaws.com.key"),
-//     cert: fs.readFileSync("/etc/ssl/certs/ec2-54-174-154-58.compute-1.amazonaws.com.crt")
-//   };
-
-// var https = require("https");
-// var server = https.createServer(options, app);
 var http = require("http");
 var server = http.createServer(app);
-
-
 
 const io = require("socket.io")(server, {
     handlePreflightRequest: (req, res) => {
@@ -55,12 +44,9 @@ const io = require("socket.io")(server, {
     }
 });
 
-
 io.on("connection", socket => {
     console.log("New client connected" + socket.id);
     socket.on("set_socket_data", async (data) => {
-        // data.user_id
-        // data.course_id
         var user = await User.findById(data.user_id);
         socket.user_role = user.role;
         socket.user_id = data.user_id;
@@ -203,7 +189,7 @@ io.on("connection", socket => {
                 socket.quizzes = quizzes;
             }
         } else {
-            socket.emit("lecture_is_live", {live: false});
+            socket.emit("lecture_is_live", {lecture_id: data.lecture_id, live: false});
         }
     });
 
@@ -590,22 +576,25 @@ io.on("connection", socket => {
 
     socket.on("disconnect", async () => {
         console.log("user ", socket.user_id, " ", socket.user_role, " is disconnected");
-        if (socket.user_role == "professor") {
-            var connected_lectures = socket.active_rooms.entries();
-            for (var [room, room] of connected_lectures){  
-                io.of('/').in(room).clients( (err, clients) => {
-                    console.log(clients);
-                }); 
-                var cleaned_room = room;
-                var split_pos = 0;
-                for( var i=0; i<cleaned_room.length; i++) {
-                    if (cleaned_room.charAt(i) == '+') {
-                        split_pos = i;
-                        break;
-                    }
+        if (socket.active_rooms == undefined) {
+            return;
+        }
+        var connected_lectures = socket.active_rooms.entries();
+        for (var [room, room] of connected_lectures){  
+            var cleaned_room = room;
+            var split_pos = 0;
+            for( var i=0; i<cleaned_room.length; i++) {
+                if (cleaned_room.charAt(i) == '+') {
+                    split_pos = i;
+                    break;
                 }
-                var course_id = cleaned_room.slice(0,split_pos);
-                var lecture_id = cleaned_room.slice(split_pos+1);
+            }
+            var course_id = cleaned_room.slice(0,split_pos);
+            var lecture_id = cleaned_room.slice(split_pos+1);
+            if (socket.user_role == "professor") {
+                // io.of('/').in(room).clients( (err, clients) => {
+                //     console.log(clients);
+                // }); 
                 var live = false;
                 var date ;
                 var course = await Course.findById(course_id);
@@ -625,10 +614,14 @@ io.on("connection", socket => {
                         socket.to(room).emit("lecture_is_live", data);
                     });
                 } 
+            } else if (socket.user_role == "student") {
+                var data = {
+                    socket_id: socket.id,
+                    user_id: socket.user_id
+                }
+                socket.to(room).emit("student_leave", data);
             }
-
-            
-        }
+        } 
     });
 });
 
