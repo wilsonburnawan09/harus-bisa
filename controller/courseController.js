@@ -184,7 +184,7 @@ router.get('/', verifyToken, function(req, res, next){
 router.get('/:join_code', verifyToken, function(req, res, next){
     Course.findOne({join_code: req.params.join_code}, {course_gradebook: 0, lectures: 0}, function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
-        if (!course) return res.status(404).send({ message: "Course " + req.params.id + " not found."});
+        if (!course) return res.status(404).send({ message: "Course " + req.params.join_code + " not found."});
         res.status(200).send({  message: "Get course is a success.", data: course});
     })
 });
