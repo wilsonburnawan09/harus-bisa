@@ -49,8 +49,8 @@ router.put('/:user_id', verifyToken, async function (req, res, next) {
             user["school"] = req.body.school.trim();
         }
         // if (req.body.role != null) {
-        //     if (req.body.role != "professor" && req.body.role != "student") {
-        //         return res.status(500).send({ message: "Role must be 'professor' or 'student'", data: null});
+        //     if (req.body.role != "faculty" && req.body.role != "student") {
+        //         return res.status(500).send({ message: "Role must be 'faculty' or 'student'", data: null});
         //     } else {
         //         user["role"] = req.body.role.trim();
         //     }            

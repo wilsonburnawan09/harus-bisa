@@ -10,7 +10,7 @@ var verifyToken = require('./auth/verifyTokenMiddleware');
 
 // create lecture
 router.post('/', verifyToken, function(req, res, next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Only faculty allowed to update course.", data: null});
     var description = "";
     var date = "-";
     var participation_reward_percentage = 0;
@@ -46,7 +46,7 @@ router.post('/', verifyToken, function(req, res, next){
         Course.findById(req.params.course_id, function(err, course){
             if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
             if (!course) return res.status(404).send({ message: "Course not found.", data: null});
-            if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+            if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
 
             Course.findByIdAndUpdate(req.params.course_id, {$push: {lectures: lecture}, $inc: {number_of_lectures: 1}}, {new: true, projection: {course_gradebook: 0}}, function(err, course){
                 if (err) return res.status(500).send({ message: "There was a problem updating for the course.", data: null});
@@ -97,11 +97,11 @@ router.get('/', verifyToken, function(req,res,next){
 
 // delete lecture
 router.delete('/:lecture_id', verifyToken, function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to delete lecture.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Only faculty allowed to delete lecture.", data: null});
     Course.findById(req.params.course_id, function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
         if (!course) return res.status(404).send({ message: "Course not found.", data: null});
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
         Course.findByIdAndUpdate(req.params.course_id, {$pull: {lectures: {id: Number(req.params.lecture_id)}}, $inc: {number_of_lectures: -1}}, {new: true, projection: {course_gradebook: 0}}, function(err, course){
             if (err) {
                 return res.status(500).send({ message: "There was a problem deleting for the course.", data: null});
@@ -113,11 +113,11 @@ router.delete('/:lecture_id', verifyToken, function(req,res,next){
 
 // update lecture
 router.put('/:lecture_id', verifyToken, function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update lecture.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Only faculty allowed to update lecture.", data: null});
     Course.findById(req.params.course_id, function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
         if (!course) return res.status(404).send({ message: "Course not found.", data: null});
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
 
         for(var i=0; i<course.lectures.length; i++){
             if ( course.lectures[i].id == req.params.lecture_id) {
@@ -147,12 +147,12 @@ router.put('/:lecture_id', verifyToken, function(req,res,next){
 
 // create quiz
 router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Only faculty allowed to update course.", data: null});
 
     Course.findById(req.params.course_id, async function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
         if (!course) return res.status(404).send({ message: "Course not found.", data: null});
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
 
 
         var question, correct_answer, time_duration, point;
@@ -221,12 +221,12 @@ router.post('/:lecture_id/quizzes', verifyToken, function(req,res,next){
 
 // delete quiz
 router.delete('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Only faculty allowed to update course.", data: null});
 
     Course.findById(req.params.course_id, function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
         if (!course) return res.status(404).send({ message: "Course not found.", data: null});
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
         if (isNaN(req.params.index)) return res.status(500).send({ message: "Quiz index is not a number.", data: null});
 
         var lecture_id = -1;
@@ -258,11 +258,11 @@ router.delete('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next)
 
 // update quiz
 router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Only faculty allowed to update course.", data: null});
     Course.findById(req.params.course_id, function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
         if (!course) return res.status(404).send({ message: "Course not found.", data: null});
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
         if (isNaN(req.params.index)) return res.status(500).send({ message: "Index is not a number.", data: null});
 
         var lecture_index = null;
@@ -339,11 +339,11 @@ router.put('/:lecture_id/quizzes/:index', verifyToken, function(req,res,next){
 
 // update quiz order
 router.put('/:lecture_id/quizzes/:index/order/:direction', verifyToken, function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Only faculty allowed to update course.", data: null});
     Course.findById(req.params.course_id, function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
         if (!course) return res.status(404).send({ message: "Course not found.", data: null});
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
         if (isNaN(req.params.index)) return res.status(500).send({ message: "Index is not a number.", data: null});
 
         var lecture_index = null;

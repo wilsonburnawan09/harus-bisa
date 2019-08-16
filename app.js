@@ -53,7 +53,7 @@ io.on("connection", socket => {
         socket.course_id = data.course_id;
         socket.nonactive_rooms = new Set();
         socket.active_rooms = new Set();
-        if (socket.user_role == "professor") {
+        if (socket.user_role == "faculty") {
             socket.gradebook = {
                 course_id: socket.course_id,
                 lecture_id: null,
@@ -94,7 +94,7 @@ io.on("connection", socket => {
         console.log('The user is in room: ', Object.keys(socket.rooms));
         console.log('The user inactive rooms are: ', socket.nonactive_rooms);
         console.log('The user active rooms are: ', socket.active_rooms);
-        if (socket.user_role === "professor") {
+        if (socket.user_role === "faculty") {
             console.log('The user gradebook: ', socket.gradebook);
             console.log('Quizzes: ', socket.quizzes);
         }
@@ -132,7 +132,7 @@ io.on("connection", socket => {
         var nonactive_room = socket.course_id + "-" + data.lecture_id;
         var active_room = socket.course_id + "+" + data.lecture_id;
         var lecture;
-        if (socket.user_role == "professor" && socket.nonactive_rooms.has(nonactive_room) && socket.gradebook.lecture_id == null) {
+        if (socket.user_role == "faculty" && socket.nonactive_rooms.has(nonactive_room) && socket.gradebook.lecture_id == null) {
             var course = await Course.findById(socket.course_id);
             if (course.instructor_id == socket.user_id) {
                 var lecture_index;
@@ -150,7 +150,7 @@ io.on("connection", socket => {
                     }
                 }
                 course.course_gradebook.forEach((value, user_id) => {
-                    if(value.role != "professor"){
+                    if(value.role != "faculty"){
                         var lecture_grade = {
                             present: false,
                             quiz_answers: {}
@@ -283,7 +283,7 @@ io.on("connection", socket => {
     });
 
     socket.on("record_attendance", (data) => {
-        if (socket.user_role == "professor") {
+        if (socket.user_role == "faculty") {
             var student_id = data.user_id;
             var socket_id = data.socket_id;
             if (!socket.gradebook.students.has(student_id)) {
@@ -329,7 +329,7 @@ io.on("connection", socket => {
     });
 
     socket.on("remove_student", (data) => {
-        if (socket.user_role == "professor") {
+        if (socket.user_role == "faculty") {
             var student_id = data.user_id;
             var socket_id = data.socket_id;
             if (socket.gradebook.students.has(student_id)) {
@@ -356,7 +356,7 @@ io.on("connection", socket => {
         var quiz_id = data.quiz_id;
         var quiz_index = 0;
         var lecture_index = 0;
-        if (socket.user_role == "professor" && socket.active_rooms.has(active_room)){
+        if (socket.user_role == "faculty" && socket.active_rooms.has(active_room)){
                 var course = await Course.findById(socket.course_id);
                 if (course.instructor_id == socket.user_id) {
                     for(var i=0; i<course.lectures.length; i++){
@@ -431,7 +431,7 @@ io.on("connection", socket => {
     socket.on("change_quiz_time", async (data) => {
         var active_room = socket.course_id + "+" + socket.gradebook.lecture_id;
         var quiz_id = data.quiz_id;
-        if (socket.user_role == "professor" && socket.active_rooms.has(active_room)) {
+        if (socket.user_role == "faculty" && socket.active_rooms.has(active_room)) {
             var course = await Course.findById(socket.course_id);
             if (course.instructor_id == socket.user_id) {
                 for(var i=0; i<course.lectures.length; i++){
@@ -475,7 +475,7 @@ io.on("connection", socket => {
     });
 
     socket.on("record_answer", (data) => {
-        if (socket.user_role == "professor") {
+        if (socket.user_role == "faculty") {
             var student_id = data.user_id;
             var quiz_id = data.quiz_id;
             var quiz_answer = data.quiz_answer;
@@ -538,7 +538,7 @@ io.on("connection", socket => {
 
     socket.on("close_question", async (data) => {
         var active_room = socket.course_id + "+" + socket.gradebook.lecture_id;
-        if (socket.user_role == "professor" && socket.active_rooms.has(active_room)) {
+        if (socket.user_role == "faculty" && socket.active_rooms.has(active_room)) {
             var course = await Course.findById(socket.course_id);
             var quiz_id = data.quiz_id;
             var lecture_id = socket.gradebook.lecture_id;
@@ -591,7 +591,7 @@ io.on("connection", socket => {
             }
             var course_id = cleaned_room.slice(0,split_pos);
             var lecture_id = cleaned_room.slice(split_pos+1);
-            if (socket.user_role == "professor") {
+            if (socket.user_role == "faculty") {
                 // io.of('/').in(room).clients( (err, clients) => {
                 //     console.log(clients);
                 // }); 

@@ -8,9 +8,9 @@ var Course = require('../model/Course');
 var Counter = require('../model/Counter');
 var verifyToken = require('./auth/verifyTokenMiddleware');
 
-// create course (professor) or add course (student)
+// create course (faculty) or add course (student)
 router.post('/', verifyToken, function(req, res, next){
-    if (req.role == "professor") {
+    if (req.role == "faculty") {
         var course_name = "";
         var start_term = "";
         var end_term = "";
@@ -191,7 +191,7 @@ router.get('/:join_code', verifyToken, function(req, res, next){
 
 // update course by id
 router.put('/:id', verifyToken, function(req, res, next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professor allowed to update course."})
+    if (req.role != "faculty") return res.status(401).send({ message: "Only faculty allowed to update course."})
     Course.findById(req.params.id, function(err, course){
         if (err) return res.status(500).send({ message: "There was a problem looking for the course."});
         if (!course) return res.status(404).send({ message: "Course " + req.params.id + " not found."});
@@ -240,11 +240,11 @@ router.put('/:id', verifyToken, function(req, res, next){
 
 // delete course by id
 router.delete('/:id', verifyToken, function(req, res, next){
-    if (req.role == "professor") {
+    if (req.role == "faculty") {
         Course.findById(req.params.id, function(err, course){
             if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
             if (!course) return res.status(404).send({ message: "Course not found.", data: null});
-            if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+            if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
             Course.findByIdAndDelete(req.params.id, function(err, course){
                 if (err) return res.status(500).send({ message: "There was a problem deleting the course.", data: null});
                 let users = [...course.course_gradebook.keys()]

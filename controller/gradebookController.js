@@ -51,12 +51,12 @@ async function get_class_average(course) {
     return lectures_average;
 }
 
-router.get('/professor/courses/:course_id/lectures/:lecture_id/students', verifyToken, async function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professors are allowed to see this page.", data: null});
+router.get('/faculty/courses/:course_id/lectures/:lecture_id/students', verifyToken, async function(req,res,next){
+    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
         if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
         var lecture_gradebooks = {
             gradebooks: []
         }
@@ -110,12 +110,12 @@ router.get('/professor/courses/:course_id/lectures/:lecture_id/students', verify
     });
 });
 
-router.get('/professor/courses/:course_id/lectures/:lecture_id/quizzes', verifyToken, async function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professors are allowed to see this page.", data: null});
+router.get('/faculty/courses/:course_id/lectures/:lecture_id/quizzes', verifyToken, async function(req,res,next){
+    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
         if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
         var lecture_gradebooks = {}
         lecture_gradebooks["number_of_students"] = course.number_of_students;
         lecture_gradebooks["class_average"] = await get_class_average(course)
@@ -137,7 +137,7 @@ router.get('/professor/courses/:course_id/lectures/:lecture_id/quizzes', verifyT
             var participation_pts = 0;
             var max_accuracy_pts = 0;
             for (var [user_id, course_answers] of course.course_gradebook.entries()){
-                if (course_answers.role != "professor") {
+                if (course_answers.role != "faculty") {
                     if (course_answers.lecture_grades[req.params.lecture_id].present && course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] != undefined) {
                         if (course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] == quiz.correct_answer) {
                             accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
@@ -165,12 +165,12 @@ router.get('/professor/courses/:course_id/lectures/:lecture_id/quizzes', verifyT
     });
 });
 
-router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verifyToken, async function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professors are allowed to see this page.", data: null});
+router.put('/faculty/courses/:course_id/lectures/:lecture_id/quizzes/', verifyToken, async function(req,res,next){
+    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
         if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
 
         var lecture = undefined;
         var lecture_index = undefined;
@@ -198,7 +198,7 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
             Course.findByIdAndUpdate(req.params.course_id, {$set: queries}, {new: true}, async function(err, course){
                 if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
                 if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-                if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+                if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
                 var lecture_gradebooks = {}
                 lecture_gradebooks["gradebooks_by_quizzes"] = []
                 lecture_gradebooks["gradebooks_by_students"] = []
@@ -219,7 +219,7 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
                     var participation_pts = 0;
                     var max_accuracy_pts = 0;
                     for (var [user_id, course_answers] of course.course_gradebook.entries()){
-                        if (course_answers.role != "professor") {
+                        if (course_answers.role != "faculty") {
                             if (course_answers.lecture_grades[req.params.lecture_id].present && course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] != undefined) {
                                 if (course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] == quiz.correct_answer) {
                                     accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
@@ -287,12 +287,12 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id/quizzes/', verify
     });
 });
 
-router.get('/professor/courses/:course_id/lectures', verifyToken, async function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professors are allowed to see this page.", data: null});
+router.get('/faculty/courses/:course_id/lectures', verifyToken, async function(req,res,next){
+    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
         if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
 
 
         var lecture_gradebooks = {
@@ -356,8 +356,8 @@ router.get('/professor/courses/:course_id/lectures', verifyToken, async function
     });    
 });
 
-router.put('/professor/courses/:course_id/lectures/:lecture_id', verifyToken, function (req, res, next) {
-    if (req.role != "professor") return res.status(401).send({ message: "Only professors are allowed to see this page.", data: null});
+router.put('/faculty/courses/:course_id/lectures/:lecture_id', verifyToken, function (req, res, next) {
+    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
     var participation_reward_percentage = parseInt(req.body.participation_reward_percentage);
     if (participation_reward_percentage < 0 || participation_reward_percentage > 100 || isNaN(participation_reward_percentage)) {
         return res.status(500).send({ message: "Please provide valid participation_reward_percentage.", data: null});
@@ -365,7 +365,7 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id', verifyToken, fu
     Course.findById(req.params.course_id, function(err, course){
         if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
 
         var lecture_index = undefined;
         for (var i=0; i<course.lectures.length; i++) {
@@ -382,7 +382,7 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id', verifyToken, fu
             Course.findByIdAndUpdate(req.params.course_id, {$set: {[query]: participation_reward_percentage}}, {new: true}, async function(err, course){
                 if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
                 if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-                if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+                if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
 
 
                 var lecture_gradebooks = {
@@ -446,12 +446,12 @@ router.put('/professor/courses/:course_id/lectures/:lecture_id', verifyToken, fu
     });
 });
 
-router.get('/professor/courses/:course_id/students', verifyToken, async function(req,res,next){
-    if (req.role != "professor") return res.status(401).send({ message: "Only professors are allowed to see this page.", data: null});
+router.get('/faculty/courses/:course_id/students', verifyToken, async function(req,res,next){
+    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
         if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the professor of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
 
 
         var lecture_gradebooks = {
