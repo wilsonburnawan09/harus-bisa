@@ -155,8 +155,8 @@ io.on("connection", socket => {
                             present: false,
                             quiz_answers: {}
                         }
-                        course.course_gradebook.get(user_id).lecture_grades[data.lecture_id] = lecture_grade;
-                        var field_query = "course_gradebook." + user_id + ".lecture_grades." + data.lecture_id.toString(); 
+                        course.course_gradebook.get(user_id).lectures_record[data.lecture_id] = lecture_grade;
+                        var field_query = "course_gradebook." + user_id + ".lectures_record." + data.lecture_id.toString(); 
                         Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: lecture_grade}}).exec();
                     }
                 });
@@ -267,9 +267,8 @@ io.on("connection", socket => {
             if (socket.nonactive_rooms.has(nonactive_room) && (active_room in io.sockets.adapter.rooms)) {
                 var course = await Course.findById(socket.course_id);
                 if (course.course_gradebook.has(socket.user_id)) {
-                    var field_query = "course_gradebook." + socket.user_id + ".lecture_grades." + data.lecture_id.toString() + ".present"; 
+                    var field_query = "course_gradebook." + socket.user_id + ".lectures_record." + data.lecture_id.toString() + ".present"; 
                     Course.findByIdAndUpdate(socket.course_id, {$set: {[field_query]: true}}).exec();
-
                     socket.join(active_room);
                     socket.active_rooms.add(active_room);
                     data = {
@@ -562,7 +561,7 @@ io.on("connection", socket => {
                 var student_answers = socket.gradebook.student_answers[quiz_id];
                 var update_queries = {};
                 for (var [user_id, answer] of Object.entries(student_answers)){
-                    var field_query = "course_gradebook." + user_id + ".lecture_grades." + lecture_id.toString() + ".quiz_answers." + quiz_id.toString();
+                    var field_query = "course_gradebook." + user_id + ".lectures_record." + lecture_id.toString() + ".quiz_answers." + quiz_id.toString();
                     update_queries[field_query] = answer;
                 }
 

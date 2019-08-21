@@ -67,25 +67,26 @@ router.get('/', verifyToken, function(req,res,next){
         if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
         if (course.course_gradebook.has(req.userId)){
             var projected_course = Object.assign({}, course)._doc;
-            var student_answers = projected_course.course_gradebook.get(req.userId).lecture_grades;
+            var student_answers = projected_course.course_gradebook.get(req.userId).lectures_record;
             delete projected_course.course_gradebook;
             if (req.role == "student") {
                 var has_lived_lectures = [];
-                projected_course.lectures.forEach(lecture => {
+                projected_course.lectures.forEach(lecture => { 
                     if (lecture.has_lived) {
-                        var student_lecture_answers = student_answers[lecture.id].quiz_answers;
-                        lecture.quizzes.map(quiz => {
-                            if (!student_answers[lecture.id].present || student_lecture_answers[quiz.id] == undefined) {
-                                quiz.student_answer = null;
-                            } else {
-                                quiz.student_answer = student_lecture_answers[quiz.id];
-                            }
-                        });
-                        has_lived_lectures.push(lecture);
+                            var student_lecture_answers = student_answers[lecture.id].quiz_answers;
+                            lecture.quizzes.map(quiz => {
+                                if (!student_answers[lecture.id].present || student_lecture_answers[quiz.id] == undefined) {
+                                    quiz.student_answer = null;
+                                } else {
+                                    quiz.student_answer = student_lecture_answers[quiz.id];
+                                }
+                            });
+                            has_lived_lectures.push(lecture);
+                        
                     } else {
                         has_lived_lectures.push({id: lecture.id})
                     }
-                })
+                });
                 projected_course.lectures = has_lived_lectures;
             }
             res.status(200).send({ message: "Get lectures is successful.", data: projected_course });

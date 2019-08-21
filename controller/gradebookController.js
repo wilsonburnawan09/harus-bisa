@@ -19,7 +19,7 @@ async function get_class_average(course) {
             var participation_reward = lecture_info.participation_reward_percentage;
             for (var [user_id, course_answers] of course.course_gradebook.entries()){
                 if (course_answers.role == "student") {
-                    var student_lecture_info = course_answers.lecture_grades[lecture_info.id];
+                    var student_lecture_info = course_answers.lectures_record[lecture_info.id];
                     var total_pts = 0;
                     var accuracy_pts = 0;
                     var participation_pts = 0;
@@ -72,7 +72,7 @@ router.get('/faculty/courses/:course_id/lectures/:lecture_id/students', verifyTo
         for (var [user_id, course_answers] of course.course_gradebook.entries()){
             var student = await User.findById(user_id);
             if (course_answers.role == "student") {
-                var student_lecture_info = course_answers.lecture_grades[req.params.lecture_id];
+                var student_lecture_info = course_answers.lectures_record[req.params.lecture_id];
                 var total_pts = 0;
                 var accuracy_pts = 0;
                 var participation_pts = 0;
@@ -138,8 +138,8 @@ router.get('/faculty/courses/:course_id/lectures/:lecture_id/quizzes', verifyTok
             var max_accuracy_pts = 0;
             for (var [user_id, course_answers] of course.course_gradebook.entries()){
                 if (course_answers.role != "faculty") {
-                    if (course_answers.lecture_grades[req.params.lecture_id].present && course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] != undefined) {
-                        if (course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] == quiz.correct_answer) {
+                    if (course_answers.lectures_record[req.params.lecture_id].present && course_answers.lectures_record[req.params.lecture_id].quiz_answers[quiz.id] != undefined) {
+                        if (course_answers.lectures_record[req.params.lecture_id].quiz_answers[quiz.id] == quiz.correct_answer) {
                             accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
                         }
                         total_participants += 1;
@@ -220,8 +220,8 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id/quizzes/', verifyTo
                     var max_accuracy_pts = 0;
                     for (var [user_id, course_answers] of course.course_gradebook.entries()){
                         if (course_answers.role != "faculty") {
-                            if (course_answers.lecture_grades[req.params.lecture_id].present && course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] != undefined) {
-                                if (course_answers.lecture_grades[req.params.lecture_id].quiz_answers[quiz.id] == quiz.correct_answer) {
+                            if (course_answers.lectures_record[req.params.lecture_id].present && course_answers.lectures_record[req.params.lecture_id].quiz_answers[quiz.id] != undefined) {
+                                if (course_answers.lectures_record[req.params.lecture_id].quiz_answers[quiz.id] == quiz.correct_answer) {
                                     accuracy_pts += ( (100 - participation_reward) / 100 ) * quiz.point;
                                 }
                                 total_participants += 1;
@@ -246,7 +246,7 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id/quizzes/', verifyTo
                 for (var [user_id, course_answers] of course.course_gradebook.entries()){
                     var student = await User.findById(user_id);
                     if (course_answers.role == "student") {
-                        var student_lecture_info = course_answers.lecture_grades[req.params.lecture_id];
+                        var student_lecture_info = course_answers.lectures_record[req.params.lecture_id];
                         var total_pts = 0;
                         var accuracy_pts = 0;
                         var participation_pts = 0;
@@ -306,7 +306,7 @@ router.get('/faculty/courses/:course_id/lectures', verifyToken, async function(r
                 var participation_reward = lecture_info.participation_reward_percentage;
                 for (var [user_id, course_answers] of course.course_gradebook.entries()){
                     if (course_answers.role == "student") {
-                        var student_lecture_info = course_answers.lecture_grades[lecture_info.id];
+                        var student_lecture_info = course_answers.lectures_record[lecture_info.id];
                         var total_pts = 0;
                         var accuracy_pts = 0;
                         var participation_pts = 0;
@@ -396,7 +396,7 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id', verifyToken, func
                         var participation_reward = lecture_info.participation_reward_percentage;
                         for (var [user_id, course_answers] of course.course_gradebook.entries()){
                             if (course_answers.role == "student") {
-                                var student_lecture_info = course_answers.lecture_grades[lecture_info.id];
+                                var student_lecture_info = course_answers.lectures_record[lecture_info.id];
                                 var total_pts = 0;
                                 var accuracy_pts = 0;
                                 var participation_pts = 0;
@@ -493,7 +493,7 @@ router.get('/faculty/courses/:course_id/students', verifyToken, async function(r
                 var participation_reward = lecture_info.participation_reward_percentage;
                 for (var [user_id, course_answers] of course.course_gradebook.entries()){
                     if (course_answers.role == "student") {
-                        var student_lecture_info = course_answers.lecture_grades[lecture_info.id];
+                        var student_lecture_info = course_answers.lectures_record[lecture_info.id];
                         var accuracy_pts = 0;
                         var participation_pts = 0;
                         var max_accuracy_pts = 0;
@@ -548,7 +548,7 @@ router.get('/student/courses/:course_id/lectures', verifyToken, async function(r
         course.lectures.forEach( lecture_info => {
             if (lecture_info.has_lived) {
                 var participation_reward = lecture_info.participation_reward_percentage;
-                var student_lecture_info = course_answers.lecture_grades[lecture_info.id];
+                var student_lecture_info = course_answers.lectures_record[lecture_info.id];
                 var total_pts = 0;
                 var accuracy_pts = 0;
                 var participation_pts = 0;

@@ -19,7 +19,7 @@ router.post('/', verifyToken, function(req, res, next){
         user[req.userId] = {
             role: req.role,
             overall: "N/A",
-            lecture_grades: {}
+            lectures_record: {}
         }
         if (!req.body.course_name) {
             return res.status(500).send({ message: "Please provide course name.", data: null});
@@ -109,8 +109,16 @@ router.post('/', verifyToken, function(req, res, next){
                         var student_gradebook = {
                             role: "student",
                             overall: "NA",
-                            lectures_grades: {}
+                            lectures_record: {}
                         }
+                        course.lectures.forEach(lecture => {
+                            if (lecture.has_lived) {
+                                student_gradebook.lectures_record[lecture.id] = {
+                                    present: false,
+                                    quiz_answers: {}
+                                }
+                            }
+                        })
                         var new_student = "course_gradebook." + String(user._id);
                         Course.findByIdAndUpdate(course._id, {$set: {[new_student]: student_gradebook}, $inc: {number_of_students: 1}}, {new: true}, function(err, course){
                             if (err) return res.status(500).send({ message: "There was a problem adding the user to the course.", data: null});
