@@ -52,11 +52,15 @@ async function get_class_average(course) {
 }
 
 router.get('/faculty/courses/:course_id/lectures/:lecture_id/students', verifyToken, async function(req,res,next){
-    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
+    // if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this data.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Hanya fakultas yang dapat mengakses data ini.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
-        if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
-        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        // if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+        if (err) { return res.status(500).send({ message: "Terjadi masalah dalam mendapatkan kelas.", data: null }); }
+        // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+        if (!course) return res.status(404).send({ message: "Kelas " + req.params.course_id + " tidak ditemukan.", data: null });
+        // if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas dalam kelas.", data: null});
         var lecture_gradebooks = {
             gradebooks: []
         }
@@ -67,7 +71,8 @@ router.get('/faculty/courses/:course_id/lectures/:lecture_id/students', verifyTo
                 break;
             }
         }
-        if (lecture_info == null || lecture_info.has_lived == false) return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found or never started.", data: null });
+        // if (lecture_info == null || lecture_info.has_lived == false) return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found or never started.", data: null });
+        if (lecture_info == null || lecture_info.has_lived == false) return res.status(404).send({ message: "Sesi " + req.params.lecture_id + " tidak ditemukan atau belum pernah dimulai.", data: null });
         var participation_reward = lecture_info.participation_reward_percentage;
         for (var [user_id, course_answers] of course.course_gradebook.entries()){
             var student = await User.findById(user_id);
@@ -106,16 +111,21 @@ router.get('/faculty/courses/:course_id/lectures/:lecture_id/students', verifyTo
             }
         }
         lecture_gradebooks["gradebooks"].sort((a,b) => (a.first_name > b.first_name) ? 1 : ((b.last_nom > a.last_nom) ? -1 : 0)); 
-        return res.status(200).send(lecture_gradebooks);
+        // return res.status(200).send({ data: lecture_gradebooks, message: "Get students grade by lecture is successful" });
+        return res.status(200).send({ data: lecture_gradebooks, message: "Nilai murid-murid berdasarkan sesi telah berhasil didapatkan" });
     });
 });
 
 router.get('/faculty/courses/:course_id/lectures/:lecture_id/quizzes', verifyToken, async function(req,res,next){
-    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
+    // if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this data.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Hanya fakultas yang dapat melihat mengakses data ini.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
-        if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
-        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        // if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+        if (err) { return res.status(500).send({ message: "Terjadi masalah mendapatkan kelas.", data: null }); }
+        // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+        if (!course) return res.status(404).send({ message: "Kelas " + req.params.course_id + " tidak ditemukan.", data: null });
+        // if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas dalam kelas.", data: null});
         var lecture_gradebooks = {}
         lecture_gradebooks["number_of_students"] = course.number_of_students;
         lecture_gradebooks["class_average"] = await get_class_average(course)
@@ -127,7 +137,8 @@ router.get('/faculty/courses/:course_id/lectures/:lecture_id/quizzes', verifyTok
                 break;
             }
         }
-        if (lecture_info == null || lecture_info.has_lived == false) return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found or never started.", data: null });
+        // if (lecture_info == null || lecture_info.has_lived == false) return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found or never started.", data: null });
+        if (lecture_info == null || lecture_info.has_lived == false) return res.status(404).send({ message: "Sesi " + req.params.lecture_id + " tidak ditemukan atau belum pernah dimulai.", data: null });
         var participation_reward = lecture_info.participation_reward_percentage;
         var quiz_number = 1;
         lecture_info.quizzes.forEach(quiz => {
@@ -161,16 +172,21 @@ router.get('/faculty/courses/:course_id/lectures/:lecture_id/quizzes', verifyTok
             lecture_gradebooks.gradebooks.push(quiz_gradebook);
             quiz_number += 1;
         });
-        return res.status(200).send(lecture_gradebooks);
+        // return res.status(200).send({ data: lecture_gradebooks, message: "Get quizzes grade by lecture is successful."});
+        return res.status(200).send({ data: lecture_gradebooks, message: "Nilai pertanyaan-pertanyaan berdasarkan sesi telah berhasil didapatkan."});
     });
 });
 
 router.put('/faculty/courses/:course_id/lectures/:lecture_id/quizzes/', verifyToken, async function(req,res,next){
-    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
+    // if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Hanya fakultas yang dapat mengganti pertanyaan-pertanyaan yang masuk dalam daftar nilai.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
-        if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
-        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        // if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+        if (err) { return res.status(500).send({ message: "Terjadi masalah dalam mendapatkan kelas.", data: null }); }
+        // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+        if (!course) return res.status(404).send({ message: "Kelas " + req.params.course_id + " tidak ditemukan.", data: null });
+        // if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas di dalam kelas.", data: null});
 
         var lecture = undefined;
         var lecture_index = undefined;
@@ -182,7 +198,8 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id/quizzes/', verifyTo
             }
         }
         if (lecture == undefined) {
-            return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found.", data: null });
+            // return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found.", data: null });
+            return res.status(404).send({ message: "Sesi " + req.params.lecture_id + " tidak ditemukan.", data: null });
         } else {
             var queries = {};
             req.body.quizzes.forEach( quiz => {
@@ -196,9 +213,12 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id/quizzes/', verifyTo
                 }
             });
             Course.findByIdAndUpdate(req.params.course_id, {$set: queries}, {new: true}, async function(err, course){
-                if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
-                if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-                if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+                // if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+                if (err) { return res.status(500).send({ message: "Terjadi masalah dalam mendapatkan kelas.", data: null }); }
+                // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+                if (!course) return res.status(404).send({ message: "Kelas " + req.params.course_id + " tidak ditemukan.", data: null });
+                // if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+                if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas di dalam kelas.", data: null});
                 var lecture_gradebooks = {}
                 lecture_gradebooks["gradebooks_by_quizzes"] = []
                 lecture_gradebooks["gradebooks_by_students"] = []
@@ -209,7 +229,8 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id/quizzes/', verifyTo
                         break;
                     }
                 }
-                if (lecture_info == null || lecture_info.has_lived == false) return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found or never started.", data: null });
+                // if (lecture_info == null) return res.status(404).send({ message: "Lecture " + req.params.lecture_id + " not found.", data: null });
+                if (lecture_info == null) return res.status(404).send({ message: "Sesi " + req.params.lecture_id + " tidak ditemukan.", data: null });
                 var participation_reward = lecture_info.participation_reward_percentage;
                 var quiz_number = 1;
                 lecture_info.quizzes.forEach(quiz => {
@@ -281,18 +302,23 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id/quizzes/', verifyTo
                 }
                 lecture_gradebooks["gradebooks_by_students"].sort((a,b) => (a.first_name > b.first_name) ? 1 : ((b.last_nom > a.last_nom) ? -1 : 0)); 
 
-                return res.status(200).send(lecture_gradebooks);
+                // return res.status(200).send({data: lecture_gradebooks, message: "Update included quizzes are successful"});
+                return res.status(200).send({data: lecture_gradebooks, message: "Pertanyaan-pertanyaan yang akan dimasukkan ke dalam daftar nilai telah berhasil diganti"});
             });
         }
     });
 });
 
 router.get('/faculty/courses/:course_id/lectures', verifyToken, async function(req,res,next){
-    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
+    // if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this data.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Hanya fakultas yang dapat mengakses data ini.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
-        if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
-        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        // if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+        if (err) { return res.status(500).send({ message: "Terjadi masalah dalam mendapatkan kelas.", data: null }); }
+        // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+        if (!course) return res.status(404).send({ message: "Kelas " + req.params.course_id + " tidak ditemukan.", data: null });
+        // if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas di dalam kelas.", data: null});
 
 
         var lecture_gradebooks = {
@@ -352,20 +378,26 @@ router.get('/faculty/courses/:course_id/lectures', verifyToken, async function(r
         });
         var lectures = await Promise.all(getting_lectures);
         lecture_gradebooks["gradebooks"] = lectures;
-        return res.status(200).send(lecture_gradebooks);
+        // return res.status(200).send({ data: lecture_gradebooks, message: "Get lectures grade is successful."});
+        return res.status(200).send({ data: lecture_gradebooks, message: "Nilai sesi-sesi berdasarkan kelas telah berhasil didapatkan."});
     });    
 });
 
 router.put('/faculty/courses/:course_id/lectures/:lecture_id', verifyToken, function (req, res, next) {
-    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
+    // if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Hanya fakultas yang dapat mengganti setting sesi.", data: null});
     var participation_reward_percentage = parseInt(req.body.participation_reward_percentage);
     if (participation_reward_percentage < 0 || participation_reward_percentage > 100 || isNaN(participation_reward_percentage)) {
-        return res.status(500).send({ message: "Please provide valid participation_reward_percentage.", data: null});
+        // return res.status(500).send({ message: "Please provide valid participation_reward_percentage.", data: null});
+        return res.status(500).send({ message: "Mohon memberi persentase nilai yang benar (0-100).", data: null});
     }
     Course.findById(req.params.course_id, function(err, course){
-        if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
-        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        // if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+        if (err) { return res.status(500).send({ message: "Terjadi masalah dalam mendapatkan kelas.", data: null }); }
+        // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+        if (!course) return res.status(404).send({ message: "Kelas " + req.params.course_id + " tidak ditemukan.", data: null });
+        // if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas di dalam kelas.", data: null});
 
         var lecture_index = undefined;
         for (var i=0; i<course.lectures.length; i++) {
@@ -376,13 +408,17 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id', verifyToken, func
         }
 
         if (lecture_index == undefined) {
-            return res.status(404).send({ message: "Lecture id not found.", data: null});
+            // return res.status(404).send({ message: "Lecture id not found.", data: null});
+            return res.status(404).send({ message: "Sesi tidak ditemukan.", data: null});
         } else {
             var query = "lectures." + lecture_index + ".participation_reward_percentage";
             Course.findByIdAndUpdate(req.params.course_id, {$set: {[query]: participation_reward_percentage}}, {new: true}, async function(err, course){
-                if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
-                if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-                if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+                // if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+                if (err) { return res.status(500).send({ message: "Terjadi masalah dalam mendapatkan kelas.", data: null }); }
+                // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+                if (!course) return res.status(404).send({ message: "Kelas " + req.params.course_id + " tidak ditemukan.", data: null });
+                // if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+                if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas di dalam kelas.", data: null});
 
 
                 var lecture_gradebooks = {
@@ -440,18 +476,23 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id', verifyToken, func
                 });
                 var lectures = await Promise.all(getting_lectures);
                 lecture_gradebooks["gradebooks"] = lectures;
-                return res.status(200).send(lecture_gradebooks);
+                // return res.status(200).send({data: lecture_gradebooks, message: "Change participation point reward percentage for quiz is a success"});
+                return res.status(200).send({data: lecture_gradebooks, message: "Persentase nilai partisipasi sudah berhasil diganti."});
             });
         }
     });
 });
 
 router.get('/faculty/courses/:course_id/students', verifyToken, async function(req,res,next){
-    if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this page.", data: null});
+    // if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this data.", data: null});
+    if (req.role != "faculty") return res.status(401).send({ message: "Hanya fakultas yang dapat melihat data ini.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
-        if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
-        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
-        if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        // if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+        if (err) { return res.status(500).send({ message: "Terjadi masalah dalam mendapatkan kelas.", data: null }); }
+        // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+        if (!course) return res.status(404).send({ message: "Kelas " + req.params.course_id + " tidak ditemukan.", data: null });
+        // if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
+        if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas di dalam kelas.", data: null});
 
 
         var lecture_gradebooks = {
@@ -533,15 +574,19 @@ router.get('/faculty/courses/:course_id/students', verifyToken, async function(r
             return student_obj; 
         });
         gradebooks.sort((a,b) => (a.first_name > b.first_name) ? 1 : ((b.last_nom > a.last_nom) ? -1 : 0));lecture_gradebooks["gradebooks"] = gradebooks; 
-        return res.status(200).send(lecture_gradebooks);
+        // return res.status(200).send({ data: lecture_gradebooks, message: "Get students grade by course is successful."});
+        return res.status(200).send({ data: lecture_gradebooks, message: "Nilai murid-murid berdasarkan kelas telah berhasil didapatkan."});
     });    
 });
 
 router.get('/student/courses/:course_id/lectures', verifyToken, async function(req,res,next){
-    if (req.role != "student") return res.status(401).send({ message: "Only students are allowed to see this page.", data: null});
+    // if (req.role != "student") return res.status(401).send({ message: "Only students are allowed to see this data.", data: null});
+    if (req.role != "student") return res.status(401).send({ message: "Hanya murid yang dapat mengakses data ini.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
-        if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
-        if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+        // if (err) { return res.status(500).send({ message: "There was a problem looking for the course.", data: null }); }
+        if (err) { return res.status(500).send({ message: "Terjadi masalah dalam mendapatkan kelas.", data: null }); }
+        // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null });
+        if (!course) return res.status(404).send({ message: "Kelas " + req.params.course_id + " tidak ditemukan.", data: null });
 
         var course_answers = course.course_gradebook.get(req.userId);
         var gradebooks = [];
@@ -578,7 +623,8 @@ router.get('/student/courses/:course_id/lectures', verifyToken, async function(r
             }
         });
 
-        return res.status(200).send({gradebooks: gradebooks});
+        // return res.status(200).send({data: gradebooks, message: "Get student gradebook by lecture is successful."});
+        return res.status(200).send({data: gradebooks, message: "Nilai murid berdasarkan sesi telah berhasil didapatkan."});
     });  
 });
 
