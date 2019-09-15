@@ -112,7 +112,8 @@ router.get('/faculty/courses/:course_id/lectures/:lecture_id/students', verifyTo
         }
         lecture_gradebooks["gradebooks"].sort((a,b) => (a.first_name > b.first_name) ? 1 : ((b.last_nom > a.last_nom) ? -1 : 0)); 
         // return res.status(200).send({ data: lecture_gradebooks, message: "Get students grade by lecture is successful" });
-        return res.status(200).send({ data: lecture_gradebooks, message: "Nilai murid-murid berdasarkan sesi telah berhasil didapatkan" });
+        // return res.status(200).send({ data: lecture_gradebooks, message: "Nilai murid-murid berdasarkan sesi telah berhasil didapatkan" });
+        return res.status(200).send(lecture_gradebooks);
     });
 });
 
@@ -173,7 +174,8 @@ router.get('/faculty/courses/:course_id/lectures/:lecture_id/quizzes', verifyTok
             quiz_number += 1;
         });
         // return res.status(200).send({ data: lecture_gradebooks, message: "Get quizzes grade by lecture is successful."});
-        return res.status(200).send({ data: lecture_gradebooks, message: "Nilai pertanyaan-pertanyaan berdasarkan sesi telah berhasil didapatkan."});
+        // return res.status(200).send({ data: lecture_gradebooks, message: "Nilai pertanyaan-pertanyaan berdasarkan sesi telah berhasil didapatkan."});
+        return res.status(200).send(lecture_gradebooks);
     });
 });
 
@@ -303,7 +305,8 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id/quizzes/', verifyTo
                 lecture_gradebooks["gradebooks_by_students"].sort((a,b) => (a.first_name > b.first_name) ? 1 : ((b.last_nom > a.last_nom) ? -1 : 0)); 
 
                 // return res.status(200).send({data: lecture_gradebooks, message: "Update included quizzes are successful"});
-                return res.status(200).send({data: lecture_gradebooks, message: "Pertanyaan-pertanyaan yang akan dimasukkan ke dalam daftar nilai telah berhasil diganti"});
+                // return res.status(200).send({data: lecture_gradebooks, message: "Pertanyaan-pertanyaan yang akan dimasukkan ke dalam daftar nilai telah berhasil diganti"});
+                return res.status(200).send(lecture_gradebooks);
             });
         }
     });
@@ -379,7 +382,8 @@ router.get('/faculty/courses/:course_id/lectures', verifyToken, async function(r
         var lectures = await Promise.all(getting_lectures);
         lecture_gradebooks["gradebooks"] = lectures;
         // return res.status(200).send({ data: lecture_gradebooks, message: "Get lectures grade is successful."});
-        return res.status(200).send({ data: lecture_gradebooks, message: "Nilai sesi-sesi berdasarkan kelas telah berhasil didapatkan."});
+        // return res.status(200).send({ data: lecture_gradebooks, message: "Nilai sesi-sesi berdasarkan kelas telah berhasil didapatkan."});
+        return res.status(200).send(lecture_gradebooks);
     });    
 });
 
@@ -477,7 +481,8 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id', verifyToken, func
                 var lectures = await Promise.all(getting_lectures);
                 lecture_gradebooks["gradebooks"] = lectures;
                 // return res.status(200).send({data: lecture_gradebooks, message: "Change participation point reward percentage for quiz is a success"});
-                return res.status(200).send({data: lecture_gradebooks, message: "Persentase nilai partisipasi sudah berhasil diganti."});
+                // return res.status(200).send({data: lecture_gradebooks, message: "Persentase nilai partisipasi sudah berhasil diganti."});
+                return res.status(200).send(lecture_gradebooks);
             });
         }
     });
@@ -575,7 +580,8 @@ router.get('/faculty/courses/:course_id/students', verifyToken, async function(r
         });
         gradebooks.sort((a,b) => (a.first_name > b.first_name) ? 1 : ((b.last_nom > a.last_nom) ? -1 : 0));lecture_gradebooks["gradebooks"] = gradebooks; 
         // return res.status(200).send({ data: lecture_gradebooks, message: "Get students grade by course is successful."});
-        return res.status(200).send({ data: lecture_gradebooks, message: "Nilai murid-murid berdasarkan kelas telah berhasil didapatkan."});
+        // return res.status(200).send({ data: lecture_gradebooks, message: "Nilai murid-murid berdasarkan kelas telah berhasil didapatkan."});
+        return res.status(200).send(lecture_gradebooks);
     });    
 });
 
@@ -624,7 +630,8 @@ router.get('/student/courses/:course_id/lectures', verifyToken, async function(r
         });
 
         // return res.status(200).send({data: gradebooks, message: "Get student gradebook by lecture is successful."});
-        return res.status(200).send({data: gradebooks, message: "Nilai murid berdasarkan sesi telah berhasil didapatkan."});
+        // return res.status(200).send({data: gradebooks, message: "Nilai murid berdasarkan sesi telah berhasil didapatkan."});
+        return res.status(200).send({gradebooks: gradebooks, message: "Nilai murid berdasarkan sesi telah berhasil didapatkan."});
     });  
 });
 
