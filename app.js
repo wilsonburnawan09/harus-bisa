@@ -133,6 +133,7 @@ io.on("connection", socket => {
         var active_room = socket.course_id + "+" + data.lecture_id;
         var lecture;
         if (socket.user_role == "faculty" && socket.nonactive_rooms.has(nonactive_room) && socket.gradebook.lecture_id == null) {
+            console.log("hey");
             var course = await Course.findById(socket.course_id);
             if (course.instructor_id == socket.user_id) {
                 var lecture_index;
@@ -166,6 +167,7 @@ io.on("connection", socket => {
                     live: true,
                     date: lecture.date 
                 }
+                console.log(data);
                 socket.join(active_room);
                 io.to(nonactive_room).emit("lecture_is_live", data);
                 socket.active_rooms.add(active_room);
