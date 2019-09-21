@@ -189,6 +189,7 @@ io.on("connection", socket => {
                 socket.quizzes = quizzes;
             }
         } else {
+            console.log("NOOOO");
             socket.emit("lecture_is_live", {lecture_id: data.lecture_id, live: false});
         }
     });
