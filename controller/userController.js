@@ -64,7 +64,7 @@ router.put('/:user_id', verifyToken, async function (req, res, next) {
         //         user["role"] = req.body.role.trim();
         //     }            
         // }
-
+        console.log("hello" + req.body.new_password + "world");
         if (req.body.new_password != null) {
             console.log("hello" + req.body.new_password + "world");
             if (req.body.new_password != "" ) return res.status(500).send({ message: "Mohon memberi kata sandi baru.", data: null});
