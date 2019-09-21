@@ -65,7 +65,8 @@ router.put('/:user_id', verifyToken, async function (req, res, next) {
         //     }            
         // }
 
-        if (req.body.new_password != "" || req.body.new_password != null) {
+        if (req.body.new_password != null) {
+            if (req.body.new_password != "" ) return res.status(500).send({ message: "Mohon memberi kata sandi baru.", data: null});
             if (req.body.old_password == null) {
                 // return res.status(500).send({ message: "Please provide old password", data: null});
                 return res.status(500).send({ message: "Mohon memberi kata sandi lama.", data: null});
@@ -86,9 +87,7 @@ router.put('/:user_id', verifyToken, async function (req, res, next) {
                     user["password"] = bcrypt.hashSync(req.body.new_password, 8);
                 }
             }
-        }  else {
-            return res.status(500).send({ message: "Mohon memberi kata sandi baru.", data: null});
-        }
+        }  
 
         User.findByIdAndUpdate(req.params.user_id, {$set: user}, {new: true, projection: {password: 0, courses: 0}}, function (err, user) {
             // if (err) return res.status(500).send({ message: "There was an error updating the user.", data: null});
