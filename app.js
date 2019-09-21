@@ -134,6 +134,8 @@ io.on("connection", socket => {
         var lecture;
         console.log(data);
         console.log(socket.nonactive_rooms)
+        console.log(nonactive_room)
+        console.log(socket.nonactive_rooms.has(nonactive_room))
         if (!socket.nonactive_rooms.has(nonactive_room)) {
             socket.nonactive_rooms.add(nonactive_room);
             console.log("ishhh");
