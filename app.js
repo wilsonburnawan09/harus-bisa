@@ -132,7 +132,8 @@ io.on("connection", socket => {
         var nonactive_room = socket.course_id + "-" + data.lecture_id;
         var active_room = socket.course_id + "+" + data.lecture_id;
         var lecture;
-        console.log('kan');
+        console.log(data);
+        console.log(socket.nonactive_rooms)
         if (!socket.nonactive_rooms.has(nonactive_room)) {
             socket.nonactive_rooms.add(nonactive_room);
             console.log("ishhh");
