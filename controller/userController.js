@@ -65,7 +65,7 @@ router.put('/:user_id', verifyToken, async function (req, res, next) {
         //     }            
         // }
 
-        if (req.body.new_password != null || req.body.new_password != "") {
+        if (req.body.new_password != "" || req.body.new_password != null) {
             if (req.body.old_password == null) {
                 // return res.status(500).send({ message: "Please provide old password", data: null});
                 return res.status(500).send({ message: "Mohon memberi kata sandi lama.", data: null});
