@@ -81,7 +81,7 @@ router.put('/:user_id', verifyToken, async function (req, res, next) {
                 });
                 if(!old_password_match) {
                     // return res.status(403).send({ message: "Old password does not match.", data: null});
-                    return res.status(403).send({ message: "Kata sandi tidak sama.", data: null});
+                    return res.status(403).send({ message: "Kata sandi yang lama tidak cocok dengan data yang kami simpan.", data: null});
                 } else {
                     user["password"] = bcrypt.hashSync(req.body.new_password, 8);
                 }
