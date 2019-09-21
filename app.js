@@ -142,8 +142,8 @@ io.on("connection", socket => {
         }
         
         console.log("hm")
-        console.log(socker.user_role);
-        console.log(sockt.nonactive_rooms.has(nonactive_room))
+        console.log(socket.user_role);
+        console.log(socket.nonactive_rooms.has(nonactive_room))
         console.log(socket.gradebook.lecture_id);
         if (socket.user_role == "faculty" && socket.nonactive_rooms.has(nonactive_room) && socket.gradebook.lecture_id == null) {
             console.log("hey");
