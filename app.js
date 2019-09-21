@@ -140,6 +140,8 @@ io.on("connection", socket => {
             socket.nonactive_rooms.add(nonactive_room);
             console.log("ishhh");
         }
+        console.log(socket.gradebook.lecture_id);
+        console.log("hm")
         if (socket.user_role == "faculty" && socket.nonactive_rooms.has(nonactive_room) && socket.gradebook.lecture_id == null) {
             console.log("hey");
             var course = await Course.findById(socket.course_id);
