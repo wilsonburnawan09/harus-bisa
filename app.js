@@ -138,6 +138,7 @@ io.on("connection", socket => {
         console.log(socket.nonactive_rooms.has(nonactive_room))
         if (!socket.nonactive_rooms.has(nonactive_room)) {
             socket.nonactive_rooms.add(nonactive_room);
+            socket.join(nonactive_room);
             console.log("ishhh");
         }
         
