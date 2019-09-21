@@ -133,6 +133,9 @@ io.on("connection", socket => {
         var active_room = socket.course_id + "+" + data.lecture_id;
         var lecture;
         console.log('kan');
+        if (!socket.nonactive_rooms.has(nonactive_room)) {
+            socket.nonactive_rooms.add(nonactive_room);
+        }
         if (socket.user_role == "faculty" && socket.nonactive_rooms.has(nonactive_room) && socket.gradebook.lecture_id == null) {
             console.log("hey");
             var course = await Course.findById(socket.course_id);
@@ -195,6 +198,12 @@ io.on("connection", socket => {
             console.log("NOOOO");
             socket.emit("lecture_is_live", {lecture_id: data.lecture_id, live: false});
         }
+    });
+
+    
+
+    socket.on("current_lecture", async (data) => {
+
     });
 
     socket.on("stop_lecture", async (data) => {
