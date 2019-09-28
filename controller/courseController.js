@@ -9,22 +9,18 @@ var Counter = require('../model/Counter');
 var verifyToken = require('./auth/verifyTokenMiddleware');
 
 var term_is_valid = (start, end) => {
-    var start = start.split();
+    var start = start.split(" ");
     var start_month = month_converter(start[0]);
     var start_year = start[1];
-    var end = end. split();
+    var end = end.split(" ");
     var end_month = month_converter(end[0]);
     var end_year = end[1];
-
     if (end_year < start_year) {
-        console.log("e")
         return false;
     }
     if (end_month < start_month) {
-        console.log('adfad')
         return false;
     }
-    console.log("hm")
     return true;
 };
 
@@ -100,9 +96,7 @@ router.post('/', verifyToken, function(req, res, next){
             end_term = req.body.end_term.trim();
         } 
 
-        console.log(start_term, end_term);
         if (!term_is_valid(start_term, end_term)) {
-            console.log("hey")
             return res.status(500).send({ message: "Akhir kelas harus setelah mulai kelas.", data: null});
         }
 
