@@ -98,6 +98,7 @@ router.post('/', verifyToken, function(req, res, next){
         } 
 
         if (!term_is_valid(start_term, end_term)) {
+            console.log("hey")
             return res.status(500).send({ message: "Akhir kelas harus setelah mulai kelas.", data: null});
         }
 
