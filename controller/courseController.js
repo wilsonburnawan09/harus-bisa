@@ -17,11 +17,13 @@ var term_is_valid = (start, end) => {
     var end_year = end[1];
 
     if (end_year < start_year) {
+        console.log("e")
         return false;
     } else if (end_month < start_year) {
+        console.log('adfad')
         return false;
     }
-
+    console.log("hm")
     return true;
 };
 
