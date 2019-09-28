@@ -407,7 +407,7 @@ router.delete('/:id', verifyToken, function(req, res, next){
                     res.status(500).send({  message: "Terjadi masalah dalam mendapatkan kelas-kelas.",
                                             data: null
                                         });
-                }); 
+                });
             });
         });
     } 

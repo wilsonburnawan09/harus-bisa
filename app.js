@@ -132,22 +132,12 @@ io.on("connection", socket => {
         var nonactive_room = socket.course_id + "-" + data.lecture_id;
         var active_room = socket.course_id + "+" + data.lecture_id;
         var lecture;
-        console.log(data);
-        console.log(socket.nonactive_rooms)
-        console.log(nonactive_room)
-        console.log(socket.nonactive_rooms.has(nonactive_room))
         if (!socket.nonactive_rooms.has(nonactive_room)) {
             socket.nonactive_rooms.add(nonactive_room);
             socket.join(nonactive_room);
-            console.log("ishhh");
         }
         
-        console.log("hm")
-        console.log(socket.user_role);
-        console.log(socket.nonactive_rooms.has(nonactive_room))
-        console.log(socket.gradebook.lecture_id);
         if (socket.user_role == "faculty" && socket.nonactive_rooms.has(nonactive_room) && socket.gradebook.lecture_id == null) {
-            console.log("hey");
             var course = await Course.findById(socket.course_id);
             if (course.instructor_id == socket.user_id) {
                 var lecture_index;
@@ -181,7 +171,6 @@ io.on("connection", socket => {
                     live: true,
                     date: lecture.date 
                 }
-                console.log(data);
                 socket.join(active_room);
                 io.to(nonactive_room).emit("lecture_is_live", data);
                 socket.active_rooms.add(active_room);
