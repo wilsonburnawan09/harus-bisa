@@ -313,7 +313,7 @@ router.put('/:id', verifyToken, function(req, res, next){
         if (req.body.course_name != null) { course.course_name = req.body.course_name.trim(); }
         if (req.body.start_term != null) { course.start_term = req.body.start_term.trim(); }
         if (req.body.end_term != null) { course.end_term = req.body.end_term.trim(); }
-        if (!term_is_valid(start_term, end_term)) {
+        if (!term_is_valid(req.body.start_term.trim(), req.body.end_term.trim())) {
             return res.status(500).send({ message: "Akhir kelas harus setelah mulai kelas.", data: null});
         }
         if (req.body.description != null) { course.description = req.body.description.trim(); }
