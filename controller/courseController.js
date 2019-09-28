@@ -20,7 +20,7 @@ var term_is_valid = (start, end) => {
         console.log("e")
         return false;
     }
-    if (end_month < start_year) {
+    if (end_month < start_month) {
         console.log('adfad')
         return false;
     }
