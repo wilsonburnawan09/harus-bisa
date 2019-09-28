@@ -11,8 +11,8 @@ var config = require('../../config');
 var gmail = config.email;
 var gmail_password = config.email_password;
 var crypto = require('crypto');
-var nodemailer = require('nodemailer');
-var mg = require('nodemailer-mailgun-transport');
+var AWS = require('aws-sdk');
+AWS.config.update({region: 'us-east-1'});
 
 router.post('/signup', function(req, res) {
 	var first_name = "";
@@ -79,29 +79,36 @@ router.post('/signup', function(req, res) {
 					// if (err) { return res.status(500).send({ message: "There was a problem creating the verification token." }); }
 					if (err) { return res.status(500).send({ message: "Terjadi masalah dalam membuat token verifikasi." + err}); }
 					
-					var auth = {
-						auth: {
-						  api_key: '',
-						  domain: ''
-						}
-					  }
-					   
-					  var nodemailerMailgun = nodemailer.createTransport(mg(auth));
-					   
-					  nodemailerMailgun.sendMail({
-						from: gmail,
-						to: user.email,
-						subject: 'Harus Bisa - verifikasi email',
-						//You can use "text:" to send plain-text content. It's oldschool!
-						text: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttps:\/\/' + 'api.harusbisa.net' + '\/api\/confirmation\/' + random + '.\n'
-					  }, function (err, info) {
-						if (err) {
-							// return res.status(500).send({ message: "There was a problem sending the verification email." + err});
-						// }
-						// else {
-							res.status(200).send({ auth: true, token: login_token, message: "Email verifikasi telah dikirim." });
-						}
-					  });
+
+					var params = {
+						Destination: {
+						  	ToAddresses: [user.email]
+						},
+						Message: { /* required */
+						  	Body: { /* required */
+								Text: {
+									Charset: "UTF-8",
+									Data: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttps:\/\/' + 'api.harusbisa.net' + '\/api\/confirmation\/' + random + '.\n'
+									}
+								},
+								Subject: {
+									Charset: 'UTF-8',
+									Data: 'Harus Bisa - verifikasi email'
+								}
+						  	},
+							Source: gmail,
+					  	};
+					  
+					var sendPromise = new AWS.SES({apiVersion: '2010-12-01'}).sendEmail(params).promise();
+					  
+					sendPromise.then(
+					function(data) {
+						res.status(200).send({ auth: true, token: login_token, message: "Email verifikasi telah dikirim." });
+					}).catch(
+						function(err) {
+						console.error(err, err.stack);
+						res.status(500).send(err)
+					});
 				});
       		}); 
     	}
@@ -121,7 +128,6 @@ router.get('/confirmation/:token', function(req,res) {
             user.save(function (err) {
                 if (err) { return res.status(500).send({ message: "There was a problem verifying the user" }); }
 				res.status(301).redirect("https://www.harusbisa.net/login")
-				// res.status(200).send("https://www.harusbisa.net/courses")
             });
         });
     });
