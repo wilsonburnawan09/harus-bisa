@@ -18,7 +18,7 @@ var term_is_valid = (start, end) => {
     if (end_year < start_year) {
         return false;
     }
-    if (end_year >= start_year && end_month < start_month) {
+    if (end_year == start_year && end_month < start_month) {
         return false;
     }
     return true;
