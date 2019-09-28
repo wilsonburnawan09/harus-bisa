@@ -8,6 +8,67 @@ var Course = require('../model/Course');
 var Counter = require('../model/Counter');
 var verifyToken = require('./auth/verifyTokenMiddleware');
 
+var term_is_valid = (start, end) => {
+    var start = start.split();
+    var start_month = month_converter(start[0]);
+    var start_year = start[1];
+    var end = end. split();
+    var end_month = month_converter(end[0]);
+    var end_year = end[1];
+
+    if (end_year < start_year) {
+        return false;
+    } else if (end_month < start_year) {
+        return false;
+    }
+
+    return true;
+};
+
+var month_converter = (month) => {
+    var month_int;
+    switch(month) {
+        case "January":
+            month_int = 1;
+            break;
+        case "February":
+            month_int = 2;
+            break;
+        case "March":
+            month_int = 3;
+            break;
+        case "April":
+            month_int = 4;
+            break;
+        case "May":
+            month_int = 5;
+            break;
+        case "June":
+            month_int = 6;
+            break;
+        case "July":
+            month_int = 7;
+            break;
+        case "August":
+            month_int = 8;
+            break;
+        case "September":
+            month_int = 9;
+            break;
+        case "October":
+            month_int = 10;
+            break;
+        case "November":
+            month_int = 11;
+            break;
+        case "December":
+            month_int = 12;
+            break;
+      }
+
+      return month_int;
+};
+
 // create course (faculty) or add course (student)
 router.post('/', verifyToken, function(req, res, next){
     if (req.role == "faculty") {
@@ -35,6 +96,10 @@ router.post('/', verifyToken, function(req, res, next){
         if (req.body.end_term != null) {
             end_term = req.body.end_term.trim();
         } 
+
+        if (!term_is_valid(start_term, end_term)) {
+            return res.status(500).send({ message: "Akhir kelas harus setelah mulai kelas.", data: null});
+        }
 
         if (req.body.description != null) { 
             description = req.body.description.trim();
