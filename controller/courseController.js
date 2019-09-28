@@ -16,8 +16,11 @@ var term_is_valid = (start, end) => {
     var end_month = month_converter(end[0]);
     var end_year = end[1];
     if (end_year < start_year) {
+        console.log(start_year, end_year)
         return false;
-    } else if (end_month < start_month) {
+    }
+    if (end_month < start_month) {
+        console.log(start_month, end_month)
         return false;
     }
     return true;
