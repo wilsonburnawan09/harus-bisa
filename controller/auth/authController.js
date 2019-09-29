@@ -59,18 +59,6 @@ router.post('/signup', function(req, res) {
 			function (err, user) {
 				// if (err) return res.status(500).send( {message: "There was a problem registering the user."});
 				if (err) return res.status(500).send({ message: "Terjadi masalah dalam mendaftarkan pengguna aplikasi."});
-			// create a token
-				// var payload = {
-				// 	id: user._id,
-				// 	first_name: user.first_name,
-				// 	last_name: user.last_name,
-				// 	email: user.email,
-				// 	role: user.role,
-				// 	school: user.school
-				// }
-				// var login_token = jwt.sign(payload, config.secret, {
-				// 	expiresIn: 86400 // expires in 24 hours
-				// });
 				
 				var random = crypto.randomBytes(16).toString('hex');
 
@@ -84,8 +72,8 @@ router.post('/signup', function(req, res) {
 						Destination: {
 						  	ToAddresses: [user.email]
 						},
-						Message: { /* required */
-						  	Body: { /* required */
+						Message: {
+						  	Body: {
 								Text: {
 									Charset: "UTF-8",
 									Data: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttps:\/\/' + 'api.harusbisa.net' + '\/api\/confirmation\/' + random + '.\n'
@@ -139,18 +127,6 @@ router.post('/resend', function(req, res){
 		if (!user) return res.status(400).send({ message: 'Pengguna aplikasi dengan email '+ req.body.email + ' tidak dapat ditemukan.' });
 		// if (user.is_verified) return res.status(400).send({ message: 'This account has already been verified. Please log in.' });
 		if (user.is_verified) return res.status(400).send({ message: 'Pengguna aplikasi sudah pernah di verifikasi. Tolong login' });
- 
-		// var payload = {
-		// 	id: user._id,
-		// 	first_name: user.first_name,
-		// 	last_name: user.last_name,
-		// 	email: user.email,
-		// 	role: user.role,
-		// 	school: user.school
-		// }
-		// var login_token = jwt.sign(payload, config.secret, {
-		// 	expiresIn: 86400 // expires in 24 hours
-		// });
 		
 		var random = crypto.randomBytes(16).toString('hex');
 
@@ -163,8 +139,8 @@ router.post('/resend', function(req, res){
 				Destination: {
 					  ToAddresses: [user.email]
 				},
-				Message: { /* required */
-					  Body: { /* required */
+				Message: { 
+					  Body: {
 						Text: {
 							Charset: "UTF-8",
 							Data: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttps:\/\/' + 'api.harusbisa.net' + '\/api\/confirmation\/' + random + '.\n'
