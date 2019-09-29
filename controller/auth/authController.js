@@ -12,7 +12,7 @@ var gmail = config.email;
 var gmail_password = config.email_password;
 var crypto = require('crypto');
 var AWS = require('aws-sdk');
-AWS.config.update({region: 'us-east-1'});
+// AWS.config.update({region: 'us-east-1'});
 
 router.post('/signup', function(req, res) {
 	var first_name = "";
