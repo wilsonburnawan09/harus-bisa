@@ -60,17 +60,17 @@ router.post('/signup', function(req, res) {
 				// if (err) return res.status(500).send( {message: "There was a problem registering the user."});
 				if (err) return res.status(500).send({ message: "Terjadi masalah dalam mendaftarkan pengguna aplikasi."});
 			// create a token
-				var payload = {
-					id: user._id,
-					first_name: user.first_name,
-					last_name: user.last_name,
-					email: user.email,
-					role: user.role,
-					school: user.school
-				}
-				var login_token = jwt.sign(payload, config.secret, {
-					expiresIn: 86400 // expires in 24 hours
-				});
+				// var payload = {
+				// 	id: user._id,
+				// 	first_name: user.first_name,
+				// 	last_name: user.last_name,
+				// 	email: user.email,
+				// 	role: user.role,
+				// 	school: user.school
+				// }
+				// var login_token = jwt.sign(payload, config.secret, {
+				// 	expiresIn: 86400 // expires in 24 hours
+				// });
 				
 				var random = crypto.randomBytes(16).toString('hex');
 
@@ -103,7 +103,7 @@ router.post('/signup', function(req, res) {
 					  
 					sendPromise.then(
 					function(data) {
-						res.status(200).send({ auth: true, token: login_token, message: "Email verifikasi telah dikirim." });
+						res.status(200).send({ auth: true, message: "Email verifikasi telah dikirim." });
 					}).catch(
 						function(err) {
 						console.error(err, err.stack);
@@ -140,17 +140,17 @@ router.post('/resend', function(req, res){
 		// if (user.is_verified) return res.status(400).send({ message: 'This account has already been verified. Please log in.' });
 		if (user.is_verified) return res.status(400).send({ message: 'Pengguna aplikasi sudah pernah di verifikasi. Tolong login' });
  
-		var payload = {
-			id: user._id,
-			first_name: user.first_name,
-			last_name: user.last_name,
-			email: user.email,
-			role: user.role,
-			school: user.school
-		}
-		var login_token = jwt.sign(payload, config.secret, {
-			expiresIn: 86400 // expires in 24 hours
-		});
+		// var payload = {
+		// 	id: user._id,
+		// 	first_name: user.first_name,
+		// 	last_name: user.last_name,
+		// 	email: user.email,
+		// 	role: user.role,
+		// 	school: user.school
+		// }
+		// var login_token = jwt.sign(payload, config.secret, {
+		// 	expiresIn: 86400 // expires in 24 hours
+		// });
 		
 		var random = crypto.randomBytes(16).toString('hex');
 
@@ -159,18 +159,34 @@ router.post('/resend', function(req, res){
 			// if (err) { return res.status(500).send({ message: "There was a problem creating the verification token." }); }
 			if (err) { return res.status(500).send({ message: "Terjadi masalah dalam membuat token verifikasi." + err}); }
 			
-			var smtpTransport = nodemailer.createTransport({
-				service: "Gmail",
-				auth: {
-					user: gmail,
-					pass: gmail_password
-				}
-			});
-			var mailOptions = { from: gmail, to: user.email, subject: 'Account Verification Token', text: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttps:\/\/' + 'api.harusbisa.net' + '\/api\/confirmation\/' + random + '.\n' };
-			smtpTransport.sendMail(mailOptions, function (err) {
-				if (err) { return res.status(500).send({ message: "There was a problem sending the verification email"}); }
-				// res.status(200).send({ auth: true, token: token, message: "Verification email has been sent." });
-				res.status(200).send({ auth: true, token: login_token, message: "Email verifikasi telah dikirim." });
+			var params = {
+				Destination: {
+					  ToAddresses: [user.email]
+				},
+				Message: { /* required */
+					  Body: { /* required */
+						Text: {
+							Charset: "UTF-8",
+							Data: 'Hello,\n\n' + 'Please verify your account by clicking the link: \nhttps:\/\/' + 'api.harusbisa.net' + '\/api\/confirmation\/' + random + '.\n'
+							}
+						},
+						Subject: {
+							Charset: 'UTF-8',
+							Data: 'Harus Bisa - verifikasi email'
+						}
+					  },
+					Source: gmail,
+				  };
+			  
+			var sendPromise = new AWS.SES({apiVersion: '2010-12-01'}).sendEmail(params).promise();
+			  
+			sendPromise.then(
+			function(data) {
+				res.status(200).send({ auth: true, message: "Email verifikasi telah dikirim." });
+			}).catch(
+				function(err) {
+				console.error(err, err.stack);
+				res.status(500).send(err)
 			});
 		});
  
@@ -197,7 +213,7 @@ router.post('/login', function(req, res) {
 		// if (!passwordIsValid) return res.status(401).send({ auth: false, token: null, message: "Wrong password."});
 		if (!passwordIsValid) return res.status(401).send({ auth: false, token: null, message: "Email atau password yang diberikan salah. Silahkan dicoba lagi."});
 		// if (!user.is_verified) return res.status(401).send({ message: 'Your account has not been verified.', auth: false, token: null });
-		// if (!user.is_verified) return res.status(401).send({ message: 'Akun ini belum di verifikasi melalui email.', auth: false, token: null });
+		if (!user.is_verified) return res.status(401).send({ message: 'Akun ini belum di verifikasi melalui email.', auth: false, token: null });
     
     	var payload = {
 			id: user._id,
