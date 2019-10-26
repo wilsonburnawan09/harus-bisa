@@ -94,8 +94,9 @@ router.post('/signup', function(req, res) {
 						res.status(200).send({ auth: true, message: "Email verifikasi telah dikirim." });
 					}).catch(
 						function(err) {
-						console.error(err, err.stack);
-						res.status(500).send(err)
+						// console.error(err, err.stack);
+						// res.status(500).send(err)
+						res.status(200)
 					});
 				});
       		}); 
