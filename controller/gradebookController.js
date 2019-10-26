@@ -489,6 +489,7 @@ router.put('/faculty/courses/:course_id/lectures/:lecture_id', verifyToken, func
 });
 
 router.get('/faculty/courses/:course_id/students', verifyToken, async function(req,res,next){
+    console.log('hello')
     // if (req.role != "faculty") return res.status(401).send({ message: "Only facultys are allowed to see this data.", data: null});
     if (req.role != "faculty") return res.status(401).send({ message: "Hanya fakultas yang dapat melihat data ini.", data: null});
     Course.findById(req.params.course_id, async function(err, course){
