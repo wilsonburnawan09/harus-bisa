@@ -189,7 +189,7 @@ router.post('/login', function(req, res) {
 		// if (!passwordIsValid) return res.status(401).send({ auth: false, token: null, message: "Wrong password."});
 		if (!passwordIsValid) return res.status(401).send({ auth: false, token: null, message: "Email atau password yang diberikan salah. Silahkan dicoba lagi."});
 		// if (!user.is_verified) return res.status(401).send({ message: 'Your account has not been verified.', auth: false, token: null });
-		if (!user.is_verified) return res.status(401).send({ message: 'Akun ini belum di verifikasi melalui email.', auth: false, token: null });
+		// if (!user.is_verified) return res.status(401).send({ message: 'Akun ini belum di verifikasi melalui email.', auth: false, token: null });
     
     	var payload = {
 			id: user._id,
