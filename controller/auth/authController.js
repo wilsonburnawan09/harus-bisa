@@ -92,13 +92,11 @@ router.post('/signup', function(req, res) {
 					sendPromise.then(
 					function(data) {
 						res.status(200).send({ auth: true, message: "Email verifikasi telah dikirim." });
-						console.log('yes')
 					}).catch(
 						function(err) {
 						// console.error(err, err.stack);
 						// res.status(500).send(err)
-						console.log('no')
-						res.status(200).send({ auth: true, message: "Email verifikasi telah dikirim." });
+						res.status(200).send({ auth: true, message: "Email verifikasi belum dikirim." });
 					});
 				});
       		}); 
