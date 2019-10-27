@@ -15,7 +15,6 @@ var AWS = require('aws-sdk');
 AWS.config.update({region: 'us-east-1'});
 
 router.post('/signup', function(req, res) {
-	console.log('yes')
 	var first_name = "";
   	var last_name = "";
   	var email = "";
@@ -43,7 +42,6 @@ router.post('/signup', function(req, res) {
   	} else {
     	hashed_password = bcrypt.hashSync(req.body.password, 8);
   	}
-	  console.log('hello')
   	User.findOne({ email: email}, function(err, user){
     	if(user) {
 			  // return res.status(500).send({ auth: false, token: null, message: "Email " + email + " already exists."});
@@ -58,7 +56,6 @@ router.post('/signup', function(req, res) {
 				password : hashed_password
 			},
 			function (err, user) {
-				console.log('boom');
 				// if (err) return res.status(500).send( {message: "There was a problem registering the user."});
 				if (err) return res.status(500).send({ message: "Terjadi masalah dalam mendaftarkan pengguna aplikasi."});
 				
@@ -93,7 +90,6 @@ router.post('/signup', function(req, res) {
 					  
 					sendPromise.then(
 					function(data) {
-						console.log('here')
 						res.status(200).send({ auth: true, message: "Email verifikasi telah dikirim." });
 					}).catch(
 						function(err) {

@@ -32,6 +32,7 @@ router.post('/', verifyToken, function(req, res, next){
     } else {
         participation_reward_percentage = Number(req.body.participation_reward_percentage);
     }
+    console.log('boom')
 
     Counter.findByIdAndUpdate("lecture_id", {$inc: {value: 1}}, {new: true}).then(function(counter){
         var lecture = {
@@ -46,6 +47,7 @@ router.post('/', verifyToken, function(req, res, next){
         }
     
         Course.findById(req.params.course_id, function(err, course){
+            console.log('hello')
             // if (err) return res.status(500).send({ message: "There was a problem looking for the course.", data: null});
             if (err) return res.status(500).send({ message: "Terjadi masalah dalam mendapatkan kelas.", data: null});
             // if (!course) return res.status(404).send({ message: "Course not found.", data: null});
