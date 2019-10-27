@@ -54,8 +54,10 @@ router.post('/', verifyToken, function(req, res, next){
             if (!course) return res.status(404).send({ message: "Kelas tidak dapat ditemukan.", data: null});
             // if (course.instructor_id != req.userId) return res.status(401).send({ message: "You are not the faculty of this course.", data: null});
             if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas di dalam kelas.", data: null});
+            console.log('yes')
 
             Course.findByIdAndUpdate(req.params.course_id, {$push: {lectures: lecture}, $inc: {number_of_lectures: 1}}, {new: true, projection: {course_gradebook: 0}}, function(err, course){
+                console.log('no')
                 // if (err) return res.status(500).send({ message: "There was a problem updating for the course.", data: null});
                 if (err) return res.status(500).send({ message: "Terjadi masalah dalam menambah sesi.", data: null});
                 // if (!course) return res.status(404).send({ message: "Course " + req.params.course_id + " not found.", data: null});
@@ -63,6 +65,7 @@ router.post('/', verifyToken, function(req, res, next){
                 // if (course.instructor_id != req.userId) return res.status(401).send({ message: "The ID provided does not match the instructor ID for the course.", data: null});
                 if (course.instructor_id != req.userId) return res.status(401).send({ message: "ID pengguna aplikasi tidak sama dengan ID fakultas di dalam kelas.", data: null});
                 // res.status(200).send({ message: "Lectures has been created.", data: course });
+                console.log(course)
                 res.status(200).send({ message: "Sesi telah berhasil ditambahkan.", data: course });
             });
         });
