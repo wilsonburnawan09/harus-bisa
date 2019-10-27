@@ -15,7 +15,7 @@ var AWS = require('aws-sdk');
 AWS.config.update({region: 'us-east-1'});
 
 router.post('/signup', function(req, res) {
-	
+	console.log('yes')
 	var first_name = "";
   	var last_name = "";
   	var email = "";
